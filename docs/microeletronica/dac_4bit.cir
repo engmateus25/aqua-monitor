@@ -1,0 +1,60 @@
+* Conversor DAC de Redistribuicao de Carga (4-Bits) - Aqua Monitor
+* Simulacao da fase de Amostragem e Aproximacoes Sucessivas
+
+* Tensao de Referencia
+Vref VDD 0 1.8V
+
+* Tensao do Sensor de Turbidez/pH (Ex: Vin = 1.25V)
+Vin Vsensor 0 1.25V
+
+* --- MATRIZ DE CAPACITORES (DAC) ---
+* Ctot = 16 * C0 = 1.6pF
+C3 Vtop Vbot3 800f
+C2 Vtop Vbot2 400f
+C1 Vtop Vbot1 200f
+C0 Vtop Vbot0 100f
+Cterm Vtop Vbot_term 100f
+
+* Resistor de fuga enorme para evitar erro de matriz singular no SPICE (Nodo flutuante)
+Rleak Vtop 0 1T
+
+* --- CHAVE DE AMOSTRAGEM (SAMPLE & HOLD) ---
+* Modelo de chave ideal controlada por tensao
+.model SW_IDEAL SW(Ron=10 Roff=100G Vt=0.9 Vh=0.1)
+
+* Vsample é o controle da chave. Nivel Alto = Chave Fechada.
+Vsample_ctrl ctrl_sample 0 PWL(0 1.8V 1us 1.8V 1.01us 0V 10us 0V)
+S1 Vtop 0 ctrl_sample 0 SW_IDEAL
+
+* --- SINAIS DE CONTROLE DA FSM (Botoes do DAC) ---
+* Durante o SAMPLE (0 a 1us), todos os Vbots sao ligados ao Vsensor.
+* Apos 1us, eles passam a seguir a logica da Busca Binaria.
+
+* BIT 3 (MSB - Peso 8) -> Ligado ao Vsensor no inicio. Vai pra 1.8V em 2us. Mantem 1.8V pq Vtop < 0.
+Vb3 Vbot3 0 PWL(0 1.25V 1us 1.25V 1.01us 0V 2us 0V 2.01us 1.8V 10us 1.8V)
+
+* BIT 2 (Peso 4) -> Ligado ao Vsensor. Vai pra 1.8V em 3us. Mas como a tensao passa de 0, ele deve voltar pra 0 em 4us!
+Vb2 Vbot2 0 PWL(0 1.25V 1us 1.25V 1.01us 0V 3us 0V 3.01us 1.8V 4us 1.8V 4.01us 0V 10us 0V)
+
+* BIT 1 (Peso 2) -> Vai pra 1.8V em 4us. Mantem 1.8V pq Vtop < 0.
+Vb1 Vbot1 0 PWL(0 1.25V 1us 1.25V 1.01us 0V 4us 0V 4.01us 1.8V 10us 1.8V)
+
+* BIT 0 (Peso 1) -> Vai pra 1.8V em 5us. Como Vtop > 0, volta pra 0 em 6us.
+Vb0 Vbot0 0 PWL(0 1.25V 1us 1.25V 1.01us 0V 5us 0V 5.01us 1.8V 6us 1.8V 6.01us 0V 10us 0V)
+
+* O Cterm sempre vai pro GND apos a amostragem
+Vbterm Vbot_term 0 PWL(0 1.25V 1us 1.25V 1.01us 0V 10us 0V)
+
+* --- COMANDOS DE SIMULACAO ---
+.control
+  * Simulação transiente de 0 ate 7 microsegundos com passo de 10ns
+  tran 10n 7u
+  
+  * Imprime um relatorio no terminal
+  print V(Vtop)
+  
+  * Opcional: Se rodado com a GUI do ngspice, plota o grafico.
+  * Mas vamos rodar em batch e extrair os dados.
+  write dac_sim.raw V(Vtop) V(Vbot3) V(Vbot2) V(Vbot1) V(Vbot0)
+.endc
+.end
