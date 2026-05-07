@@ -529,6 +529,17 @@ Os erros maximos de $0{,}80\%$ sao atribuiveis ao $R_{leak}$ e estao muito abaix
 erro de quantizacao intrinseco do ADC de 4-bits ($1/16 = 6{,}25\%$), confirmando a
 validade dos resultados.
 
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.98\linewidth]{fig_comparacao_pre_pos.png}
+  \caption{Forma de onda transiente de $V_{top}$ -- comparativo pre-layout (azul solido)
+  vs. pos-layout (vermelho tracejado) para $V_{in} = 1{,}25\,\text{V}$, $V_{REF} = 1{,}8\,\text{V}$.
+  As linhas verticais coloridas indicam os instantes de transicao de fase da FSM SAR.
+  O desvio sistematico de $0{,}42\%$ causado pelos 6{,}72\,fF de parasitas e visivelmente
+  indistinguivel na escala do grafico.}
+  \label{fig:sim_comparacao}
+\end{figure}
+
 \subsection{Discussao Critica}
 
 Os resultados digitais e analogicos convergem para o mesmo valor logico
