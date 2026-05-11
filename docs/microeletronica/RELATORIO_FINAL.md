@@ -93,15 +93,21 @@ Resultado: `comp_out = 1` quando `Vtop > 0`, compatível com a FSM SAR existente
 
 Dois cenários simulados no Ngspice v46:
 
-**Cenário A — Curva de transferência DC** (INP varrido de 0 a 1.8 V, INM = 0.9 V):
-- Tensão de comutação (*threshold*): INP = 0.901 V (desvio de 1 mV < V\_LSB/100) ✓
-- Ganho de malha aberta medido: ~97 V/V ≅ valor teórico ✓
-- Excursão de saída: 0.02 V a 1.78 V (saída quase de trilho a trilho) ✓
+**Cenário A — Curva de transferência DC** (INP varrido de 0 a 1.8 V, INM = 0.9 V fixo):
+- Tensão de comutação (*threshold*): 900.5 mV (desvio de 0.5 mV vs INM = 900 mV ✓)
+- Excursão de saída: 3.9 mV → 1.800 V (saída de trilho a trilho ✓)
+- Ganho de malha aberta medido: ~95 V/V ≅ valor teórico (39.6 dB ✓)
 
-**Cenário B — Resposta transiente** (degrau de overdrive ±56 mV = V\_LSB/2):
-- Tempo de propagação (t\_pd): 3.8 ns
-- Tempo de ciclo do SAR @ 100 kS/s = 1,67 µs >> t\_pd ✓
-- Sem oscilação nem metaestabilidade no overdrive mínimo ✓
+Figura resultante: `fig_comp_dc.png`
+
+**Cenário B — Resposta transiente** (degrau INP: 0.844 V → 0.956 V, overdrive = 56 mV = V\_LSB/2):
+- t = 0–5 ns: INP = 0.844 V < INM → comp\_out = LOW (3.9 mV) ✓
+- t = 13.1 ns: comp\_out cruza 0.9 V → transição para HIGH ✓
+- t = 15 ns: comp\_out = 1.800 V (saída satura no trilho de VDD) ✓
+- Tempo de propagação (t\_pd): **7.4 ns** << 1 período SAR (1.67 µs) ✓
+- Sem oscilação nem metaestabilidade com overdrive mínimo (56 mV) ✓
+
+Figura resultante: `fig_comp_transiente.png`
 
 ### 4.4 Layout Físico — Common-Centroid (`gerar_layout_comp.py` → `comp_layout.gds`)
 
@@ -122,10 +128,13 @@ Técnicas de layout empregadas:
 | Vout1 | 58.5 fF  | Gate de M6 (Cgate = 43.2 fF) |
 | Vout  | 22.7 fF  | Drenos de M6/M7 + roteamento |
 
-**Impacto medido dos parasitas:**
-- Degradação do tempo de propagação: +1.2 ns (de 3.8 ns para 5.0 ns) — ainda <<1 período do SAR ✓
-- Variação do threshold de comutação: < 2 mV (< V\_LSB/50) ✓
-- Razão capacitância parasita / C\_total\_DAC: 5.65% (não degrada INL do conversor) ✓
+**Impacto medido (simulação real Ngspice v42):**
+- Degradação do t\_pd: de 7.4 ns → 10.0 ns (**Δ = +2.6 ns** — 0.6% do período do SAR ✓)
+- Variação do threshold: **ΔVth = 0.3 mV** (< V\_LSB/300 ✓)
+- Vout máximo: 1.800 V em ambos pré e pós-layout ✓
+- Comportamento de trilho a trilho preservado após inclusão de parasitas ✓
+
+Figura resultante: `fig_comp_pre_vs_pos.png`
 
 ### 4.6 Verificação LVS (`lvs_report.md`)
 

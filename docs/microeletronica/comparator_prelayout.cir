@@ -37,10 +37,10 @@ Vbias2 Vbias2 0  DC 1.2V   $ Gate de M7 (carga ativa estagio 2)
 * ============================================================
 VINm INM 0 DC 0.9V
 
-* Para simulacao DC sweep: INP varia de 0 a 1.8V
-* Para simulacao transiente: degrau de +/-56mV em torno de 0.9V
-VINp INP 0 DC 0.9V PWL(0 0.844V  5n 0.844V  6n 0.956V  50n 0.956V
-+                    51n 0.844V 100n 0.844V)
+* INP: DC=0.844V (ponto inicial da transiente = ponto de partida do PWL)
+* O DC sweep sobrepoe este valor durante a analise .dc
+VINp INP 0 DC 0.844V PWL(0 0.844V  5n 0.844V  6n 0.956V  50n 0.956V
++                         51n 0.844V 100n 0.844V)
 
 * ============================================================
 * ESTAGIO 1: PAR DIFERENCIAL PMOS + ESPELHO NMOS
@@ -78,6 +78,19 @@ M6 Vout Vout1 0 0 NMOS W=10U L=0.5U
 * Fornece corrente de carga controlada (~20uA)
 M7 Vout Vbias2 VDD VDD PMOS W=20U L=0.5U
 
+* Capacitores de carga: estabilidade numerica + realismo de interconexao
+* Ctail evita no flutuante em Vtail no inicio da transiente
+Ctail      Vtail 0  5F
+Cvd1_load  Vd1   0  15F
+Cload_mid  Vout1 0  20F
+Cload_out  Vout  0  30F
+
+* ============================================================
+* OPCOES DE CONVERGENCIA
+* ============================================================
+.options RELTOL=0.01 ABSTOL=10P VNTOL=0.5M ITL4=200 ITL5=0 TRTOL=5
+.options METHOD=gear
+
 * ============================================================
 * ANALISES
 * ============================================================
@@ -95,8 +108,7 @@ M7 Vout Vbias2 VDD VDD PMOS W=20U L=0.5U
   echo " ANALISE 2: CURVA DE TRANSFERENCIA DC"
   echo " INP varia de 0 a 1.8V | INM fixo = 0.9V"
   echo "==========================================="
-  alter VINp dc 0.9
-  dc VINp 0 1.8 0.001
+  dc VINp 0 1.8 0.002
 
   * Exportar dados da curva de transferencia
   wrdata comp_dc_transfer.csv V(INP) V(Vout1) V(Vout)
@@ -112,15 +124,15 @@ M7 Vout Vbias2 VDD VDD PMOS W=20U L=0.5U
   echo " Degrau de overdrive: +/-56mV (= Vlsb/2)"
   echo " INM = 0.9V (ref) | INP: 0.844V -> 0.956V"
   echo "==========================================="
-  alter VINp dc 0.844
-  tran 0.5n 120n
+  reset
+  tran 0.2n 100n
 
   * Exportar forma de onda transiente
   wrdata comp_transient.csv time V(INP) V(INM) V(Vout1) V(Vout)
 
   * Medir tempo de propagacao (50% de INP a 50% de Vout)
   meas tran t_rise TRIG V(INP)=0.9 RISE=1 TARG V(Vout)=0.9 RISE=1
-  echo "Tempo de propagacao (rising): "
+  echo "Tempo de propagacao (rising, 0.844->0.956V): "
   print t_rise
 
   echo "==========================================="
