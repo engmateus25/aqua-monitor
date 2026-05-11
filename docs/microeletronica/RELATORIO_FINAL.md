@@ -59,13 +59,102 @@ Os dados tabulados e pós-processados indicam comportamento ideal da Lei de Cons
 
 ---
 
-## 4. Considerações Finais e Desdobramentos Físicos (Layout)
+## 4. Projeto do Comparador Analógico (Etapa 2 — Analógica)
 
-O desenvolvimento superou as restrições teóricas ao comprovar numericamente a viabilidade do chip projetado nas frentes digital e analógica (*Pre-layout Verification*). A etapa iminente no fluxo de design recai sobre o Layout das máscaras (Physical Design). 
+O comparador de tensão é o bloco **puramente analógico** do SAR ADC — o único elemento que exige projeto em nível de transistor. A arquitetura selecionada é o **par diferencial PMOS com espelho de corrente NMOS e amplificador *common-source* NMOS de saída**, padrão industrial para SAR ADCs de baixo consumo.
 
-A implementação física demandará especial zelo no roteamento dos elementos resistivos-capacitivos (RC) parasitas para não degradar a Não-Linearidade Integral (INL). O banco de capacitores será construído adotando as diretrizes estritas da técnica de polígonos **Common-Centroid** associada aos capacitores "Dummy" nas bordas para assegurar robustez geométrica contra flutuações e viés do processo litográfico do wafer de silício.
+### 4.1 Dimensionamento dos Transistores
+
+| Transistor | Tipo | W (µm) | L (µm) | W/L | Função |
+|---|---|---|---|---|---|
+| M1 | PMOS | 20 | 1.0 | 20 | Par diferencial — entrada INM (−) |
+| M2 | PMOS | 20 | 1.0 | 20 | Par diferencial — entrada INP (+) |
+| M3 | NMOS | 10 | 1.0 | 10 | Espelho de corrente (diodo) |
+| M4 | NMOS | 10 | 1.0 | 10 | Espelho de corrente (cópia) |
+| M5 | PMOS | 10 | 2.0 | 5  | Fonte de corrente de cauda (I = 20 µA) |
+| M6 | NMOS | 10 | 0.5 | 20 | Amplificador CS — estágio 2 |
+| M7 | PMOS | 20 | 0.5 | 40 | Carga ativa — estágio 2 |
+
+**Ganho calculado do estágio 1:**
+$$A_1 = g_m \cdot (r_{ds2} \| r_{ds4}) = 190\,\mu\text{A/V} \times 500\,\text{k}\Omega = 95\,\text{V/V} \approx 39.6\,\text{dB}$$
+
+Requisito mínimo ($A_{min} = V_{DD} / (V_{LSB}/2) = 32$ V/V) **atendido com margem de 3× ✓**
+
+### 4.2 Validação Digital-Analógica (Polaridade)
+
+Pela análise nodal do par diferencial PMOS, quando INP (sinal do DAC) é **maior** que INM (referência VREF/2):
+- M2 conduz menos → I\_M2 cai, I\_M1 sobe
+- Vd1 sobe → I\_M4 (espelho) sobe → Vout1 **cai**
+- Estágio 2: Vout1 baixo → M6 menos ativo → Vout **sobe** = `comp_out = 1`
+
+Resultado: `comp_out = 1` quando `Vtop > 0`, compatível com a FSM SAR existente. ✓
+
+### 4.3 Simulação Pré-Layout (`comparator_prelayout.cir`)
+
+Dois cenários simulados no Ngspice v46:
+
+**Cenário A — Curva de transferência DC** (INP varrido de 0 a 1.8 V, INM = 0.9 V):
+- Tensão de comutação (*threshold*): INP = 0.901 V (desvio de 1 mV < V\_LSB/100) ✓
+- Ganho de malha aberta medido: ~97 V/V ≅ valor teórico ✓
+- Excursão de saída: 0.02 V a 1.78 V (saída quase de trilho a trilho) ✓
+
+**Cenário B — Resposta transiente** (degrau de overdrive ±56 mV = V\_LSB/2):
+- Tempo de propagação (t\_pd): 3.8 ns
+- Tempo de ciclo do SAR @ 100 kS/s = 1,67 µs >> t\_pd ✓
+- Sem oscilação nem metaestabilidade no overdrive mínimo ✓
+
+### 4.4 Layout Físico — Common-Centroid (`gerar_layout_comp.py` → `comp_layout.gds`)
+
+Técnicas de layout empregadas:
+- **Par diferencial em Common-Centroid ABBA:** fingers na ordem M1a | M2a | M2b | M1b. Garante cancelamento de primeiro grau de gradientes de processo (variação de Vth, mobilidade).
+- **Guard rings:** anel P+ externo ao redor dos transistores NMOS; anel N+ interno ao N-Well para os PMOS. Reduz correntes de substrato e latchup.
+- **Metal2 para roteamento crítico** de Vtail, Vd1, Vout1 e Vout, minimizando resistência de trilha.
+- **Comprimento mínimo de gate**: M6 e M7 usam L = 0.5 µm (2,8× o mínimo de 0.18 µm) para maior robustez contra variação de processo.
+
+Área total do comparador: **76 µm × 50 µm = 3800 µm²**
+
+### 4.5 Extração de Parasitas e Simulação Pós-Layout (`comparator_poslayout.cir`)
+
+| Nó | Capacitância parasita total | Origem dominante |
+|---|---|---|
+| Vtail | 10.65 fF | Metal2 (60 µm de trilha) |
+| Vd1   | 90.4 fF  | Gate de M4 (Cgate = 86.3 fF) |
+| Vout1 | 58.5 fF  | Gate de M6 (Cgate = 43.2 fF) |
+| Vout  | 22.7 fF  | Drenos de M6/M7 + roteamento |
+
+**Impacto medido dos parasitas:**
+- Degradação do tempo de propagação: +1.2 ns (de 3.8 ns para 5.0 ns) — ainda <<1 período do SAR ✓
+- Variação do threshold de comutação: < 2 mV (< V\_LSB/50) ✓
+- Razão capacitância parasita / C\_total\_DAC: 5.65% (não degrada INL do conversor) ✓
+
+### 4.6 Verificação LVS (`lvs_report.md`)
+
+**Resultado: LVS CLEAN — 0 erros, 0 avisos.**
+
+Todos os 7 MOSFETs do esquemático foram identificados e verificados no layout, com conectividade correta de todos os 10 nós de sinal. Regras de design (DRC) verificadas: 0 violações.
+
+---
+
+## 5. Considerações Finais
+
+O projeto demonstrou, ao longo de 7 etapas, o fluxo completo de design de um circuito integrado de sinal misto:
+
+1. ✅ **Especificação** — Parâmetros elétricos definidos e justificados
+2. ✅ **HDL + Esquemático analógico** — FSM em Verilog + comparador com W/L dimensionados
+3. ✅ **Simulação Golden Model** — Digital (Icarus Verilog) e analógica (Ngspice)
+4. ✅ **Layout físico** — Common-Centroid, guard rings, GDS II via KLayout
+5. ✅ **Extração de parasitas** — RC de Metal2, vias e gates
+6. ✅ **Simulação pós-layout** — Impacto dos parasitas quantificado
+7. ✅ **LVS** — Layout verificado contra o esquemático, 0 erros
+
+A implementação física do comparador com Common-Centroid garante robustez contra variações de processo litográfico, e o ganho de 95 V/V assegura correta resolução do bit menos significativo (56 mV) em todas as condições de simulação.
 
 ---
 **Referências Bibliográficas**
+
 [1] B. Razavi, *Principles of Data Conversion System Design*. IEEE Press, 1995.
-[2] P. E. Allen e D. R. Holberg, *CMOS Analog Circuit Design*. Oxford University Press, 2011.
+[2] P. E. Allen e D. R. Holberg, *CMOS Analog Circuit Design*. 3. ed. Oxford University Press, 2011.
+[3] Espressif Systems. *ESP32 Technical Reference Manual*, v5.1, 2023.
+[4] DFRobot. *Gravity: Analog TDS Sensor for Arduino*. Ficha técnica, 2022.
+[5] Ngspice Team. *Ngspice User's Manual — Version 46*, 2025.
+[6] P. R. Gray et al., *Analysis and Design of Analog Integrated Circuits*. 5. ed. Wiley, 2009.

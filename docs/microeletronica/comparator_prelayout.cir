@@ -1,0 +1,132 @@
+* ============================================================
+* COMPARADOR DIFERENCIAL DE 2 ESTAGIOS - SAR ADC Aqua Monitor
+* Pre-Layout (Golden Model) | Ngspice v46
+* Tecnologia: CMOS 180nm, VDD = 1.8V, I_tail = 20uA
+* Arquitetura: Par Diferencial PMOS + Espelho NMOS + Inversor CS
+* ============================================================
+* Nos principais:
+*   INP  - Entrada de sinal (+), liga ao gate de M2
+*   INM  - Entrada de referencia (-), liga ao gate de M1
+*   Vtail - No de cauda (fonte de corrente M5)
+*   Vd1  - Dreno de M1 / referencia do espelho (M3 diodo + gate M4)
+*   Vout1 - Saida do estagio 1 (dreno de M2 / dreno de M4)
+*   Vout - Saida final (comp_out): HIGH quando INP > INM
+* ============================================================
+
+.title Comparador_2Est_SAR_ADC_Aqua_Monitor
+
+* ============================================================
+* MODELOS MOSFET CMOS 180nm (Level 1 - Educacional)
+* up.Cox = 270uA/V^2 (NMOS) | up.Cox = 90uA/V^2 (PMOS)
+* Vtn = +0.5V | Vtp = -0.5V | lambda = 0.1 V^-1
+* ============================================================
+.MODEL NMOS NMOS LEVEL=1 VTO=0.5  KP=270U LAMBDA=0.1 GAMMA=0.4 PHI=0.8 TOX=4N
+.MODEL PMOS PMOS LEVEL=1 VTO=-0.5 KP=90U  LAMBDA=0.1 GAMMA=0.4 PHI=0.8 TOX=4N
+
+* ============================================================
+* ALIMENTACAO E POLARIZACAO
+* ============================================================
+VDD  VDD  0  1.8V
+Vbias  Vbias  0  DC 1.0V   $ Gate de M5 (tail PMOS, I_tail=20uA)
+Vbias2 Vbias2 0  DC 1.2V   $ Gate de M7 (carga ativa estagio 2)
+
+* ============================================================
+* ENTRADAS
+* INM = referencia fixa = VREF/2 = 0.9V
+* INP = sinal variavel (Vtop do DAC + offset 0.9V)
+* ============================================================
+VINm INM 0 DC 0.9V
+
+* Para simulacao DC sweep: INP varia de 0 a 1.8V
+* Para simulacao transiente: degrau de +/-56mV em torno de 0.9V
+VINp INP 0 DC 0.9V PWL(0 0.844V  5n 0.844V  6n 0.956V  50n 0.956V
++                    51n 0.844V 100n 0.844V)
+
+* ============================================================
+* ESTAGIO 1: PAR DIFERENCIAL PMOS + ESPELHO NMOS
+* ============================================================
+
+* M5 - Fonte de corrente de cauda (PMOS)
+* S=VDD, G=Vbias(1.0V), D=Vtail | W=10u L=2u W/L=5 | I_tail=20uA
+M5 Vtail Vbias VDD VDD PMOS W=10U L=2U
+
+* M1 - Par diferencial PMOS, entrada de referencia INM (-)
+* S=Vtail, G=INM, D=Vd1
+M1 Vd1 INM Vtail VDD PMOS W=20U L=1U
+
+* M2 - Par diferencial PMOS, entrada de sinal INP (+)
+* S=Vtail, G=INP, D=Vout1
+M2 Vout1 INP Vtail VDD PMOS W=20U L=1U
+
+* M3 - Espelho NMOS (diodo conectado, referencia do espelho)
+* D=Vd1, G=Vd1 (diodo), S=GND
+M3 Vd1 Vd1 0 0 NMOS W=10U L=1U
+
+* M4 - Espelho NMOS (copia do espelho)
+* D=Vout1, G=Vd1, S=GND
+M4 Vout1 Vd1 0 0 NMOS W=10U L=1U
+
+* ============================================================
+* ESTAGIO 2: AMPLIFICADOR COMMON-SOURCE (NMOS) + CARGA (PMOS)
+* ============================================================
+
+* M6 - NMOS common-source: Gate=Vout1, Drain=Vout, Source=GND
+* Quando Vout1 CAI -> M6 menos ligado -> Vout SOBE (comp_out=HIGH)
+M6 Vout Vout1 0 0 NMOS W=10U L=0.5U
+
+* M7 - PMOS carga ativa: Gate=Vbias2(1.2V), Drain=Vout, Source=VDD
+* Fornece corrente de carga controlada (~20uA)
+M7 Vout Vbias2 VDD VDD PMOS W=20U L=0.5U
+
+* ============================================================
+* ANALISES
+* ============================================================
+.control
+
+  echo "==========================================="
+  echo " ANALISE 1: PONTO DE OPERACAO DC"
+  echo "==========================================="
+  op
+  print V(Vtail) V(Vd1) V(Vout1) V(Vout)
+  print @M5[id] @M1[id] @M2[id] @M3[id] @M4[id]
+  echo ""
+
+  echo "==========================================="
+  echo " ANALISE 2: CURVA DE TRANSFERENCIA DC"
+  echo " INP varia de 0 a 1.8V | INM fixo = 0.9V"
+  echo "==========================================="
+  alter VINp dc 0.9
+  dc VINp 0 1.8 0.001
+
+  * Exportar dados da curva de transferencia
+  wrdata comp_dc_transfer.csv V(INP) V(Vout1) V(Vout)
+
+  * Calcular ponto de comutacao (threshold)
+  meas dc Vth_out WHEN V(Vout)=0.9 RISE=1
+  echo "Tensao de comutacao (INP quando Vout=0.9V): "
+  print Vth_out
+  echo ""
+
+  echo "==========================================="
+  echo " ANALISE 3: RESPOSTA TRANSIENTE"
+  echo " Degrau de overdrive: +/-56mV (= Vlsb/2)"
+  echo " INM = 0.9V (ref) | INP: 0.844V -> 0.956V"
+  echo "==========================================="
+  alter VINp dc 0.844
+  tran 0.5n 120n
+
+  * Exportar forma de onda transiente
+  wrdata comp_transient.csv time V(INP) V(INM) V(Vout1) V(Vout)
+
+  * Medir tempo de propagacao (50% de INP a 50% de Vout)
+  meas tran t_rise TRIG V(INP)=0.9 RISE=1 TARG V(Vout)=0.9 RISE=1
+  echo "Tempo de propagacao (rising): "
+  print t_rise
+
+  echo "==========================================="
+  echo " ANALISE CONCLUIDA"
+  echo "==========================================="
+
+.endc
+
+.end
