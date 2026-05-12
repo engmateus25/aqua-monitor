@@ -3,4 +3,4 @@
 \contentsline {table}{\numberline {2}{\ignorespaces Tabela de verdade completa do Hamming Encoder: 16 codewords de saída}}{10}{table.caption.2}%
 \contentsline {table}{\numberline {3}{\ignorespaces Mapeamento síndrome $\to $ posição de erro para $d = 1011_2$}}{12}{table.caption.6}%
 \contentsline {table}{\numberline {4}{\ignorespaces Estimativa de células lógicas após síntese para CMOS 0,35\,\textmu m}}{13}{table.caption.8}%
-\contentsline {table}{\numberline {5}{\ignorespaces Comparação do HammingChip v1.0 com implementações Hamming(7,4) da literatura}}{16}{table.caption.12}%
+\contentsline {table}{\numberline {5}{\ignorespaces Comparação do HammingChip v1.0 com implementações Hamming(7,4) da literatura}}{18}{table.caption.19}%

@@ -1,6 +1,6 @@
 \babel@toc {brazil}{}\relax 
-\contentsline {table}{\numberline {1}{\ignorespaces Parâmetros do processo CMOS 0,35\,\textmu m}}{6}{table.caption.1}%
-\contentsline {table}{\numberline {2}{\ignorespaces Tabela de verdade completa do Hamming Encoder: 16 codewords de saída}}{10}{table.caption.2}%
-\contentsline {table}{\numberline {3}{\ignorespaces Mapeamento síndrome $\to $ posição de erro para $d = 1011_2$}}{12}{table.caption.6}%
-\contentsline {table}{\numberline {4}{\ignorespaces Estimativa de células lógicas após síntese para CMOS 0,35\,\textmu m}}{13}{table.caption.8}%
-\contentsline {table}{\numberline {5}{\ignorespaces Comparação do HammingChip v1.0 com implementações Hamming(7,4) da literatura}}{16}{table.caption.12}%
+\contentsline {table}{\numberline {1}{\ignorespaces Parâmetros do processo CMOS 0,35\,\textmu m}}{7}{table.caption.1}%
+\contentsline {table}{\numberline {2}{\ignorespaces Tabela de verdade completa do Hamming Encoder: 16 codewords de saída}}{11}{table.caption.2}%
+\contentsline {table}{\numberline {3}{\ignorespaces Mapeamento síndrome $\to $ posição de erro para $d = 1011_2$}}{13}{table.caption.6}%
+\contentsline {table}{\numberline {4}{\ignorespaces Estimativa de células lógicas após síntese para CMOS 0,35\,\textmu m}}{14}{table.caption.8}%
+\contentsline {table}{\numberline {5}{\ignorespaces Comparação do HammingChip v1.0 com implementações Hamming(7,4) da literatura}}{19}{table.caption.19}%

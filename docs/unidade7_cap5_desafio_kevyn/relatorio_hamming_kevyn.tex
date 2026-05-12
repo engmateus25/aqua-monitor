@@ -671,7 +671,84 @@ A síntese lógica do HammingChip v1.0 é extremamente compacta:
 \end{tabular}
 \end{table}
 
-\subsection{Análise de \textit{Layout}}
+\subsection{Esquemáticos em Nível de Portas Lógicas}
+
+\subsubsection{Codificador Hamming(7,4)}
+
+A Figura~\ref{fig:schem_enc} detalha o codificador ao nível de portas lógicas. Cada bit de paridade é gerado por uma árvore de duas portas XOR em cascata: $p_1 = d_1 \oplus d_2 \oplus d_4$, $p_2 = d_1 \oplus d_3 \oplus d_4$ e $p_4 = d_2 \oplus d_3 \oplus d_4$. A saída é o \textit{codeword} de 7~bits \texttt{[p1,p2,d1,p4,d2,d3,d4]}.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{fig_schem_encoder.png}
+  \caption{Esquemático gate-level do Codificador Hamming(7,4): três árvores de XOR gerando p1, p2 e p4 a partir dos bits de dados d1--d4. Saída: codeword[6:0].}
+  \label{fig:schem_enc}
+\end{figure}
+
+\subsubsection{Gerador de Síndrome}
+
+A Figura~\ref{fig:schem_syn} mostra as cadeias XOR do decodificador para os três bits de síndrome: $s_1 = r_1 \oplus r_3 \oplus r_5 \oplus r_7$, $s_2 = r_2 \oplus r_3 \oplus r_6 \oplus r_7$ e $s_4 = r_4 \oplus r_5 \oplus r_6 \oplus r_7$. O valor binário $\{s_4,s_2,s_1\}$ indica diretamente a posição do erro (0 = sem erro).
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{fig_schem_syndrome.png}
+  \caption{Esquemático gate-level do Gerador de Síndrome: três cadeias de três portas XOR cada, computando s1, s2 e s4 a partir dos 7 bits recebidos r[6:0].}
+  \label{fig:schem_syn}
+\end{figure}
+
+\subsubsection{Corretor de Erro e Visão Completa do Chip}
+
+A Figura~\ref{fig:schem_cor} apresenta o Corretor de Erro: um decodificador 3→7 (AND3 com NOT seletivo) seguido de sete portas XOR que invertem o bit apontado pela síndrome. A Figura~\ref{fig:schem_full} reúne todos os blocos numa visão de nível de \textit{chip}.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.9\textwidth]{fig_schem_corrector.png}
+  \caption{Corretor de Erro gate-level: decodificador AND3 (com entradas NOT seletivas) gerando sel1--sel7; sete portas XOR corrigindo os bits recebidos $r_i \oplus \text{sel}_i$.}
+  \label{fig:schem_cor}
+\end{figure}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{fig_schem_chip_full.png}
+  \caption{Esquemático completo (visão de blocos) do HammingChip v1.0: Encoder → Canal Ruidoso → Gerador de Síndrome → Corretor de Erro, com barramento de 7~bits e saídas de dado corrigido e \textit{error\_flag}.}
+  \label{fig:schem_full}
+\end{figure}
+
+\subsection{Análise de \textit{Layout} Físico CMOS}
+
+\subsubsection{Célula Padrão: XOR2 CMOS}
+
+A Figura~\ref{fig:layout_xor2} exibe o \textit{layout} físico de uma célula XOR2 em processo CMOS 0,35\,\textmu m com camadas no padrão Cadence Virtuoso. Os quatro transistores (2 PMOS no N-Well em arranjo \textbf{Common-Centroid ABBA}: M1a|M2a|M2b|M1b; 2 NMOS no substrato P) são visíveis com suas difusões P\textsuperscript{+} (salmão) e N\textsuperscript{+} (laranja), portas Poly (magenta), contatos (cinza) e trilhas Metal-1 (azul). Os \textit{guard rings} P\textsuperscript{+}/N\textsuperscript{+} previnem \textit{latch-up}.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.85\textwidth]{fig_layout_xor2.png}
+  \caption{Layout físico da célula XOR2 CMOS (0,35\,\textmu m). Camadas: N-Well (rosa), Active (verde), P\textsuperscript{+} (salmão), N\textsuperscript{+} (laranja), Poly/Gate (magenta), Contact (cinza), Metal-1 (azul), Metal-2 (laranja). Arranjo ABBA com Guard Rings.}
+  \label{fig:layout_xor2}
+\end{figure}
+
+\subsubsection{Die Completo — HammingChip v1.0}
+
+A Figura~\ref{fig:layout_die} mostra o \textit{layout} de nível de die (52\,\textmu m\,$\times$\,38\,\textmu m\,=\,1976\,\textmu m²) com os quatro blocos funcionais: \textbf{Encoder} (3 células XOR2 para p1/p2/p4), \textbf{Gerador de Síndrome} (9 células XOR2 para s1/s2/s4), \textbf{Corretor de Erro} (7 AND3 + 7 XOR2) e \textbf{I/O Pads} (d[3:0], dout[3:0], syndrome[2:0], error\_flag). Os trilhos VDD/GND em Metal-2 percorrem toda a largura.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{fig_layout_hamming_die.png}
+  \caption{Layout físico de die do HammingChip v1.0 (52\,\textmu m\,$\times$\,38\,\textmu m, CMOS 0,35\,\textmu m). Blocos: Encoder (azul), Síndrome (laranja), Corretor (verde), I/O Pads (roxo). Metal-2 nos trilhos VDD/GND.}
+  \label{fig:layout_die}
+\end{figure}
+
+\subsubsection{Zoom: Bloco Encoder com Common-Centroid ABBA}
+
+A Figura~\ref{fig:layout_enc} detalha o \textit{layout} interno do bloco Encoder com o arranjo \textbf{Common-Centroid ABBA}: os transistores PMOS do par diferencial são posicionados na ordem M1a|M2a|M2b|M1b para minimizar o descasamento por gradiente de processo e maximizar a imunidade a ruído.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.88\textwidth]{fig_layout_encoder_zoom.png}
+  \caption{Zoom do layout do bloco Encoder (p1+p2+p4 XOR2). Par diferencial PMOS em arranjo Common-Centroid ABBA: M1a|M2a|M2b|M1b. Transistores NMOS de espelho (M3/M4) e cauda (M5--M7). Guard Rings P\textsuperscript{+}/N\textsuperscript{+}.}
+  \label{fig:layout_enc}
+\end{figure}
+
+\subsection{Análise de \textit{Floorplan}}
 
 \begin{figure}[h!]
   \centering
@@ -786,6 +863,10 @@ O presente trabalho apresentou o projeto completo do \textbf{HammingChip v1.0}, 
   \item \textbf{Verificação DRC/LVS:} O \textit{layout} virtual apresentou zero violações de regras de \textit{design} e consistência total entre esquemático e \textit{layout}.
 
   \item \textbf{Consumo de potência mínimo:} A potência dinâmica estimada de $\approx$27\,\textmu W é adequada para aplicações de baixo consumo, incluindo sistemas embarcados com restrições energéticas.
+
+  \item \textbf{Esquemáticos gate-level:} Gerados por Python com símbolos IEEE para Encoder (XOR tree p1/p2/p4), Gerador de Síndrome (cadeia XOR s1/s2/s4), Corretor de Erro (AND3 decoder + XOR flip) e visão completa do chip.
+
+  \item \textbf{Layout físico CMOS:} Célula XOR2 (Common-Centroid ABBA, Guard Rings), die completo (52\,\textmu m\,$\times$\,38\,\textmu m) com 4 blocos e zoom do bloco Encoder, todos no padrão de camadas Cadence Virtuoso.
 \end{enumerate}
 
 O HammingChip v1.0 demonstra que o código de Hamming, apesar de sua simplicidade teórica, constitui uma solução robusta, eficiente e de baixo custo de hardware para proteção de dados em circuitos integrados digitais. A metodologia aplicada --- especificação formal das equações booleanas, codificação RTL estruturada, verificação por testbench abrangente e análise de \textit{layout} --- representa o fluxo completo de design de CIs digitais e valida as competências desenvolvidas ao longo da disciplina PADIS.
@@ -798,6 +879,7 @@ O HammingChip v1.0 demonstra que o código de Hamming, apesar de sua simplicidad
 \textbf{Potência dinâmica:}        & $\approx$27\,\textmu W @ 100\,MHz \\
 \textbf{DRC:}                      & 0 violações \\
 \textbf{LVS:}                      & Correto \\
+\textbf{Layout CMOS 0,35\,\textmu m:} & XOR2 + die 52×38\,\textmu m + Encoder ABBA \\
 \end{tabular}
 \end{resultbox}
 
