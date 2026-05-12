@@ -36,3 +36,12 @@ yarn-error.log*
 
 # Optional eslint cache
 .eslintcache
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
