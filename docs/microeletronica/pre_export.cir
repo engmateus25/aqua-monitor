@@ -1,0 +1,24 @@
+* Exporta dados pre-layout como CSV via print
+Vref VDD 0 1.8V
+Vin Vsensor 0 1.25V
+C3 Vtop Vbot3 800f
+C2 Vtop Vbot2 400f
+C1 Vtop Vbot1 200f
+C0 Vtop Vbot0 100f
+Cterm Vtop Vbot_term 100f
+Rleak Vtop 0 1T
+.model SW_IDEAL SW(Ron=10 Roff=100G Vt=0.9 Vh=0.1)
+Vsample_ctrl ctrl_sample 0 PWL(0 1.8V 1us 1.8V 1.01us 0V 10us 0V)
+S1 Vtop 0 ctrl_sample 0 SW_IDEAL
+Vb3 Vbot3 0 PWL(0 1.25V 1us 1.25V 1.01us 0V 2us 0V 2.01us 1.8V 10us 1.8V)
+Vb2 Vbot2 0 PWL(0 1.25V 1us 1.25V 1.01us 0V 3us 0V 3.01us 1.8V 4us 1.8V 4.01us 0V 10us 0V)
+Vb1 Vbot1 0 PWL(0 1.25V 1us 1.25V 1.01us 0V 4us 0V 4.01us 1.8V 10us 1.8V)
+Vb0 Vbot0 0 PWL(0 1.25V 1us 1.25V 1.01us 0V 5us 0V 5.01us 1.8V 6us 1.8V 6.01us 0V 10us 0V)
+Vbterm Vbot_term 0 PWL(0 1.25V 1us 1.25V 1.01us 0V 10us 0V)
+.control
+  tran 20n 7u
+  set wr_vecnames
+  set wr_singlescale
+  wrdata pre_layout_data.csv V(Vtop)
+.endc
+.end

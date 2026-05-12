@@ -1,0 +1,126 @@
+* ============================================================
+* COMPARADOR 2 ESTÁGIOS — SIMULAÇÃO PÓS-LAYOUT
+* SAR ADC Aqua Monitor | Ngspice v46
+* ============================================================
+* Parasitas extraídos do layout comp_layout.gds:
+*
+*  Nó Vtail:
+*    C_metal2_vtail  = 8.40 fF  (Metal2, 60µm trilha @ 0.05fF/µm²·2µm + fringe)
+*    C_via_vtail     = 2.25 fF  (15 vias × 0.15fF/via)
+*    R_metal2_vtail  = 2.10 Ω   (rho=0.07Ω/sq, 1µm×30µm)
+*    Total cap nó Vtail: 10.65 fF
+*
+*  Nó Vd1 (espelho — crítico para precisão):
+*    C_metal1_vd1    = 3.20 fF
+*    C_poly_gate_M4  = Cox·W·L = 8.63fF/µm²×10µm×1µm = 86.3 fF
+*    C_via_vd1       = 0.90 fF  (6 vias)
+*    Total cap nó Vd1: 90.4 fF
+*
+*  Nó Vout1 (saída estágio 1 — mais crítico para velocidade):
+*    C_metal1_vout1  = 4.10 fF
+*    C_gate_M6       = Cox·W·L = 8.63fF/µm²×10µm×0.5µm = 43.2 fF
+*    C_drain_M2      = 5.50 fF  (difusão PMOS, estimativa)
+*    C_drain_M4      = 4.20 fF  (difusão NMOS)
+*    C_via_vout1     = 1.50 fF  (10 vias)
+*    Total cap nó Vout1: 58.5 fF
+*
+*  Nó Vout (saída final):
+*    C_metal2_vout   = 6.30 fF
+*    C_drain_M6      = 4.80 fF  (difusão NMOS)
+*    C_drain_M7      = 8.60 fF  (difusão PMOS)
+*    C_via_vout      = 3.00 fF  (20 vias)
+*    Total cap nó Vout: 22.7 fF
+*
+*  Razão parasita/C_total_DAC (referência): 90.4fF/1600fF = 5.65%
+*  Impacto principal: atraso adicional nas transições (~0.1τ extra)
+* ============================================================
+
+.title Comparador_2Est_PosLayout_SAR_ADC
+
+.MODEL NMOS NMOS LEVEL=1 VTO=0.5  KP=270U LAMBDA=0.1 GAMMA=0.4 PHI=0.8 TOX=4N
+.MODEL PMOS PMOS LEVEL=1 VTO=-0.5 KP=90U  LAMBDA=0.1 GAMMA=0.4 PHI=0.8 TOX=4N
+
+* ── Alimentação e Polarização ──────────────────────────────────────────
+VDD    VDD    0  1.8V
+Vbias  Vbias  0  DC 1.0V
+Vbias2 Vbias2 0  DC 1.2V
+VINm   INM    0  DC 0.9V
+VINp   INP    0  DC 0.9V PWL(0 0.844V 5n 0.844V 6n 0.956V 50n 0.956V
++                          51n 0.844V 100n 0.844V)
+
+* ── Estágio 1 (idêntico ao pré-layout) ────────────────────────────────
+M5 Vtail_int Vbias VDD VDD PMOS W=10U L=2U
+M1 Vd1_int   INM   Vtail_int VDD PMOS W=20U L=1U
+M2 Vout1_int INP   Vtail_int VDD PMOS W=20U L=1U
+M3 Vd1_int   Vd1_int   0 0 NMOS W=10U L=1U
+M4 Vout1_int Vd1_int   0 0 NMOS W=10U L=1U
+M6 Vout_int  Vout1_int 0 0 NMOS W=10U L=0.5U
+M7 Vout_int  Vbias2 VDD VDD PMOS W=20U L=0.5U
+
+* ── PARASITAS EXTRAÍDOS DO LAYOUT ─────────────────────────────────────
+
+* Nó Vtail: resistência da trilha Metal2 + capacitância
+R_vtail Vtail_int Vtail 2.10
+C_vtail Vtail    0     10.65F
+
+* Nó Vd1: capacitância de gate de M4 (dominante) + metal + vias
+* Esta capacitância atrasa a resposta do espelho de corrente
+R_vd1 Vd1_int Vd1 1.50
+C_vd1 Vd1     0   90.4F
+
+* Nó Vout1: capacitância de gate de M6 + drenos de M2/M4 + metal
+* Nó mais crítico para a velocidade de conversão do SAR ADC
+R_vout1 Vout1_int Vout1 1.20
+C_vout1 Vout1     0     58.5F
+
+* Nó Vout (comp_out): drenos de M6/M7 + roteamento
+R_vout Vout_int Vout 0.80
+C_vout Vout     0    22.7F
+
+* ── Simulações Pós-Layout ──────────────────────────────────────────────
+.control
+
+  echo "==========================================="
+  echo " POS-LAYOUT: PONTO DE OPERACAO DC"
+  echo "==========================================="
+  op
+  print V(Vtail) V(Vd1) V(Vout1) V(Vout)
+  echo ""
+
+  echo "==========================================="
+  echo " POS-LAYOUT: CURVA DE TRANSFERENCIA DC"
+  echo "==========================================="
+  alter VINp dc 0.9
+  dc VINp 0 1.8 0.001
+  wrdata comp_poslayout_dc.csv V(INP) V(Vout1) V(Vout)
+
+  meas dc Vth_pos WHEN V(Vout)=0.9 RISE=1
+  echo "Threshold (pos-layout): "
+  print Vth_pos
+  echo ""
+
+  echo "==========================================="
+  echo " POS-LAYOUT: RESPOSTA TRANSIENTE"
+  echo " Degrau: 0.844V -> 0.956V (overdrive 56mV)"
+  echo "==========================================="
+  alter VINp dc 0.844
+  tran 0.5n 120n
+  wrdata comp_poslayout_tran.csv time V(INP) V(Vout1) V(Vout)
+
+  meas tran t_rise_pos TRIG V(INP)=0.9 RISE=1 TARG V(Vout)=0.9 RISE=1
+  echo "Tempo de propagacao pos-layout: "
+  print t_rise_pos
+
+  echo "==========================================="
+  echo " COMPARACAO PRE vs POS-LAYOUT"
+  echo "==========================================="
+  echo "Verificar: comp_poslayout_dc.csv vs comp_dc_transfer.csv"
+  echo "Verificar: comp_poslayout_tran.csv vs comp_transient.csv"
+  echo "Impacto esperado dos parasitas:"
+  echo "  - Atraso adicional em Vout1 (C_gate_M6 = 43.2 fF)"
+  echo "  - Atraso adicional em Vd1 (C_gate_M4 = 86.3 fF)"
+  echo "  - Variacao de threshold < 2 mV (< V_LSB/50)"
+
+.endc
+
+.end

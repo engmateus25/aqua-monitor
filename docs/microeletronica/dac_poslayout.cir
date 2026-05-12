@@ -1,0 +1,72 @@
+* ============================================================
+* SAR ADC 4-Bits - Simulacao POS-LAYOUT (Etapa 6)
+* Netlist com Parasitas Extraidos do Layout GDS (KLayout)
+* ============================================================
+*
+* Parasitas extraidos da celula SAR_DAC_4BIT_CC (sar_dac_layout.gds):
+*   C_metal_vtop = 4.32 fF  (Metal2 -> Substrato, 48um de trilha)
+*   C_via_vtop   = 2.40 fF  (16 vias x 0.15 fF/via)
+*   C_parasita_total = 6.72 fF no no Vtop
+*   Razao parasita/C_total_ideal = 0.42%
+*
+* Comparar com: dac_4bit.cir (pre-layout, sem parasitas)
+* ============================================================
+
+* Tensao de Referencia
+Vref VDD 0 1.8V
+
+* Tensao do Sensor de Turbidez (Vin = 1.25V)
+Vin Vsensor 0 1.25V
+
+* --- MATRIZ DE CAPACITORES (DAC) - valores ideais ---
+C3 Vtop Vbot3 800f
+C2 Vtop Vbot2 400f
+C1 Vtop Vbot1 200f
+C0 Vtop Vbot0 100f
+Cterm Vtop Vbot_term 100f
+
+* --- PARASITAS EXTRAIDOS DO LAYOUT (Etapa 5) ---
+* Capacitancia parasita do barramento de metal Vtop -> GND
+* C_metal: 48um de Metal2 @ 0.05 fF/um2 + fringe 0.04 fF/um
+C_metal_vtop Vtop 0 4.32f
+
+* Capacitancia parasita das 16 vias na placa comum (Vtop)
+* C_via: 16 vias @ 0.15 fF/via
+C_via_vtop Vtop 0 2.40f
+
+* --- Resistencias parasitas das trilhas Metal2 (RTrilha) ---
+* R_metal: rho_sheet_M2 = 0.07 Ohm/sq @ 1um width x 48um length = 3.36 Ohm
+* (Efeito na simulacao transiente: RC time constant)
+R_trilha_vtop Vtop Vtop_int 3.36
+
+* --- RESISTENCIA DE LEAKAGE (evitar no flutuante) ---
+Rleak Vtop_int 0 1T
+
+* --- CHAVE DE AMOSTRAGEM (S&H) ---
+.model SW_IDEAL SW(Ron=10 Roff=100G Vt=0.9 Vh=0.1)
+Vsample_ctrl ctrl_sample 0 PWL(0 1.8V 1us 1.8V 1.01us 0V 10us 0V)
+S1 Vtop 0 ctrl_sample 0 SW_IDEAL
+
+* --- SINAIS DE CONTROLE (identicos ao pre-layout) ---
+Vb3 Vbot3 0 PWL(0 1.25V 1us 1.25V 1.01us 0V 2us 0V 2.01us 1.8V 10us 1.8V)
+Vb2 Vbot2 0 PWL(0 1.25V 1us 1.25V 1.01us 0V 3us 0V 3.01us 1.8V 4us 1.8V 4.01us 0V 10us 0V)
+Vb1 Vbot1 0 PWL(0 1.25V 1us 1.25V 1.01us 0V 4us 0V 4.01us 1.8V 10us 1.8V)
+Vb0 Vbot0 0 PWL(0 1.25V 1us 1.25V 1.01us 0V 5us 0V 5.01us 1.8V 6us 1.8V 6.01us 0V 10us 0V)
+Vbterm Vbot_term 0 PWL(0 1.25V 1us 1.25V 1.01us 0V 10us 0V)
+
+* --- SIMULACAO ---
+.control
+  tran 10n 7u
+  
+  * Pontos criticos para comparacao com pre-layout
+  meas tran Vtop_sample  FIND V(Vtop_int) AT=1.00u
+  meas tran Vtop_bit3    FIND V(Vtop_int) AT=2.50u
+  meas tran Vtop_bit2    FIND V(Vtop_int) AT=4.50u
+  meas tran Vtop_bit1    FIND V(Vtop_int) AT=5.50u
+  meas tran Vtop_bit0    FIND V(Vtop_int) AT=6.50u
+
+  print Vtop_sample Vtop_bit3 Vtop_bit2 Vtop_bit1 Vtop_bit0
+
+  write dac_poslayout.raw V(Vtop) V(Vtop_int)
+.endc
+.end

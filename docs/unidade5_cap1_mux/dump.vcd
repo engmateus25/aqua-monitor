@@ -1,0 +1,68 @@
+$date
+	Tue May 12 03:13:13 2026
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1ps
+$end
+$scope module tb_mux_4_to_1 $end
+$var wire 8 ! y [7:0] $end
+$var parameter 32 " DATA_WIDTH $end
+$var reg 8 # d0 [7:0] $end
+$var reg 8 $ d1 [7:0] $end
+$var reg 8 % d2 [7:0] $end
+$var reg 8 & d3 [7:0] $end
+$var reg 2 ' s [1:0] $end
+$var integer 32 ( erros [31:0] $end
+$scope module dut $end
+$var wire 8 ) d0 [7:0] $end
+$var wire 8 * d1 [7:0] $end
+$var wire 8 + d2 [7:0] $end
+$var wire 8 , d3 [7:0] $end
+$var wire 2 - s [1:0] $end
+$var parameter 32 . DATA_WIDTH $end
+$var reg 8 / y [7:0] $end
+$upscope $end
+$scope task testa_mux $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+b1000 .
+b1000 "
+$end
+#0
+$dumpvars
+b10101010 /
+b0 -
+b11011101 ,
+b11001100 +
+b10111011 *
+b10101010 )
+b0 (
+b0 '
+b11011101 &
+b11001100 %
+b10111011 $
+b10101010 #
+b10101010 !
+$end
+#10000
+b10111011 !
+b10111011 /
+b1 '
+b1 -
+#20000
+b11001100 !
+b11001100 /
+b10 '
+b10 -
+#30000
+b11011101 !
+b11011101 /
+b11 '
+b11 -
+#40000
