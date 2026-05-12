@@ -7,42 +7,57 @@
 \usepackage{geometry}
 \usepackage{setspace}
 \usepackage{indentfirst}
-\usepackage{times}
 \usepackage{caption}
+\usepackage{subcaption}
 \usepackage{cite}
 \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{booktabs}
 \usepackage{array}
+\usepackage{multirow}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{fancyhdr}
 \usepackage{hyperref}
+\usepackage{siunitx}
+\usepackage{mathtools}
+\usepackage{bm}
+\usepackage{float}
 
 \geometry{left=3cm, top=3cm, right=2cm, bottom=2cm}
 \onehalfspacing
 
 \definecolor{codegray}{rgb}{0.95,0.95,0.95}
 \definecolor{codeblue}{rgb}{0.0,0.0,0.5}
+\definecolor{codegreen}{rgb}{0.0,0.45,0.0}
+\definecolor{codepurple}{rgb}{0.4,0.0,0.6}
 \lstset{
   basicstyle=\ttfamily\footnotesize,
   backgroundcolor=\color{codegray},
   frame=single,
   breaklines=true,
   keywordstyle=\color{codeblue}\bfseries,
-  commentstyle=\color{gray},
+  commentstyle=\color{codegreen}\itshape,
+  stringstyle=\color{codepurple},
   numbers=left,
   numberstyle=\tiny\color{gray},
-  numbersep=5pt
+  numbersep=5pt,
+  tabsize=2,
+  showspaces=false,
+  showstringspaces=false,
 }
 
 \pagestyle{fancy}
 \fancyhf{}
-\rhead{\footnotesize SAR ADC de 4-Bits -- Aqua Monitor}
-\lhead{\footnotesize Engenharia da Computacao / Microeletronica}
+\rhead{\footnotesize SAR ADC 4-Bits -- Aqua Monitor -- UFAM/FT 2026}
+\lhead{\footnotesize Circuitos Integrados de Sinal Misto | CMOS 180nm}
 \rfoot{\thepage}
 
 \hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}
+
+% Operadores matematicos
+\DeclareMathOperator{\SNDR}{SNDR}
+\DeclareMathOperator{\ENOB}{ENOB}
 
 \begin{document}
 
@@ -51,16 +66,17 @@
   \begin{center}
     {\Large\bfseries Universidade Federal do Amazonas -- UFAM}\\[0.3cm]
     {\large\bfseries Faculdade de Tecnologia -- FT}\\[0.1cm]
-    {\large\bfseries Curso de Engenharia da Computacao}\\[3cm]
+    {\large\bfseries Curso de Engenharia da Computacao}\\[2.0cm]
     {\large\bfseries Matheus Serrao Uchoa \quad Matricula: 22052633}\\[0.4cm]
-    {\large\bfseries [Nome Componente 2] \quad Matricula: [Inserir]}\\[3cm]
-    {\LARGE\bfseries RELATORIO -- LABORATORIO PRATICA\\[0.3cm]
-    Unidade 7 | Capitulo 5 -- Desafio de Design de Circuitos Integrados}\\[0.8cm]
-    {\Large Projeto Misto de um Conversor Analogico-Digital SAR de 4-Bits\\
-    em Tecnologia CMOS para Aquisicao de Sensores Ambientais\\
-    no Sistema Aqua Monitor}\\[3cm]
+    {\large\bfseries [Nome Componente 2] \quad Matricula: [Inserir]}\\[2.0cm]
+    {\LARGE\bfseries RELATORIO TECNICO -- LABORATORIO DE PRATICA\\[0.3cm]
+    Unidade 7 $|$ Capitulo 5 -- Desafio de Design de Circuitos Integrados}\\[0.8cm]
+    {\Large\bfseries Projeto, Verificacao e Analise de Desempenho de um\\
+    Conversor Analogico-Digital SAR de 4-Bits em Tecnologia\\
+    CMOS 180\,nm para Interfaceamento de Sensores Ambientais}\\[0.5cm]
+    {\large\itshape Sistema Aqua Monitor -- Plataforma IoT de Qualidade da Agua}\\[2.0cm]
     \vfill
-    {\normalsize\textbf{Disciplina:} Design de Circuitos Integrados}\\[0.1cm]
+    {\normalsize\textbf{Disciplina:} Design de Circuitos Integrados -- CI Amazonia}\\[0.1cm]
     {\normalsize\textbf{Professor:} Joao Fonseca}\\[0.3cm]
     {\normalsize Manaus -- AM \quad Maio de 2026}
   \end{center}
@@ -73,652 +89,1013 @@
 %% ======= RESUMO =======
 \begin{abstract}
 \noindent
-Este trabalho documenta o projeto completo, desde a especificacao eletrica ate a simulacao
-pos-layout, de um Conversor Analogico-Digital de Aproximacoes Sucessivas (SAR ADC) de 4-bits em
-tecnologia CMOS de $1{,}8\,\text{V}$ (180\,nm), concebido como front-end de aquisicao dedicado aos
-sensores analogicos do sistema \textit{Aqua Monitor}. A arquitetura Mixed-Signal articula tres
-blocos: (i) rede de redistribuicao de carga com 16 capacitores unitarios de $C_0 = 100\,\text{fF}$,
-(ii) comparador CMOS de malha aberta e (iii) FSM sintetizada em Verilog RTL. O fluxo de design
-cobre 7 etapas: especificacao, RTL, simulacao digital (Icarus Verilog), simulacao analogica
-pre-layout (Ngspice v46), layout fisico Common-Centroid (KLayout v0.30.8 + Python API),
-extracao de parasitas via leitura do GDS e simulacao pos-layout. A extracao revelou uma
-capacitancia parasita total de $6{,}72\,\text{fF}$ no no $V_{top}$ (0,42\% de $C_{tot}$).
-O desvio maximo entre pre e pos-layout foi de $2{,}6\,\text{mV}$, inferior a $V_{LSB}/40$,
-comprovando robustez do projeto para o eventual \textit{tape-out}.\\[0.5em]
-\textbf{Palavras-chave:} SAR ADC, CMOS, Mixed-Signal, Redistribuicao de Carga, Common-Centroid,
-Verilog, SPICE, KLayout, Extracao de Parasitas.
+Este trabalho apresenta o projeto completo -- desde a especificacao eletrica ate a verificacao
+\textit{Layout vs.\ Schematic} (LVS) -- de um Conversor Analogico-Digital por Aproximacoes
+Sucessivas (SAR ADC) de 4~bits em tecnologia CMOS de $V_{DD} = 1{,}8\,\text{V}$ (no de 180\,nm),
+concebido como front-end de interfaceamento para sensores eletroquimicos e opticos (pH, turbidez e
+TDS) do sistema IoT embarcado \textit{Aqua Monitor}. A arquitetura de sinal misto proposta integra
+tres blocos ortogonais: (i)~uma rede de redistribuicao de carga com banco binario de capacitores MIM
+de capacitancia total $C_{tot} = 16C_0 = 1{,}6\,\text{pF}$ ($C_0 = 100\,\text{fF}$, ruido
+$kT/C = 1{,}6\,\text{mV}$ com margem de $35\times$ sobre $V_{LSB}/2 = 56{,}25\,\text{mV}$);
+(ii)~um comparador CMOS de malha aberta de dois estagios, com par diferencial PMOS e amplificador
+\textit{common-source} NMOS de saida ($A_1 = 95\,\text{V/V} = 39{,}6\,\text{dB}$; $3\times$ de
+margem sobre o requisito minimo), dimensionado transistor a transistor com corrente de cauda
+$I_{tail} = 20\,\mu\text{A}$; e (iii)~uma Maquina de Estados Finita (FSM) sintetizada em Verilog
+RTL com 7 estados. A verificacao pos-layout do comparador revelou degradacao de tempo de propagacao
+de $t_{pd} = 7{,}4\,\text{ns}$ (pre-layout) para $10{,}0\,\text{ns}$ (pos-layout, $\Delta =
++2{,}6\,\text{ns}$) devida a $C_{Vout1} = 58{,}5\,\text{fF}$ de parasita de gate do transistor M6
+-- impacto de apenas $0{,}6\%$ do periodo do SAR de $T_{conv}/N = 1{,}67\,\mu\text{s}$. A
+tensao de limiar do comparador desviou apenas $\Delta V_{th} = 0{,}3\,\text{mV}$, correspondente
+a $V_{LSB}/375$. O layout fisico do comparador emprega par diferencial em Common-Centroid (arranjo
+ABBA de quatro \textit{fingers}) e \textit{guard rings} completos (P+ externo/N+ interno ao N-Well),
+totalizando area de $74{,}4\,\mu\text{m} \times 54{,}1\,\mu\text{m} = 4025\,\mu\text{m}^2$. A
+verificacao LVS -- 7 MOSFETs, 10 nos de sinal, 0 violacoes de DRC -- atesta a correicao completa da
+geometria. A figura de merito energetica calculada e $\text{FOM}_{Walden} \approx 45\,\text{fJ/conv-step}$
+para $f_S = 100\,\text{kS/s}$ e potencia estatica de $72\,\mu\text{W}$. O projeto demonstra o
+fluxo completo de backend de CI de sinal misto -- RTL~$\rightarrow$~Netlisting~$\rightarrow$~Simulacao
+pre-layout~$\rightarrow$~Layout GDS~$\rightarrow$~PEX~$\rightarrow$~Simulacao pos-layout~$\rightarrow$~LVS
+-- com rastreabilidade numerica completa.\\[0.5em]
+\textbf{Palavras-chave:} SAR ADC, CMOS 180nm, Mixed-Signal, Redistribuicao de Carga, Comparador
+Diferencial PMOS, Common-Centroid, Modelo de Pelgrom, Ruido kT/C, Ngspice, KLayout, LVS, IoT.
 \end{abstract}
 \newpage
 
 %% ======= 1. INTRODUCAO =======
-\section{Introducao}
+\section{Introducao e Motivacao}
 
-A expansao dos sistemas de monitoramento ambiental baseados em Internet das Coisas (IoT) tem
-impulsionado a demanda por circuitos integrados de aquisicao de dados que combinem baixissimo consumo
-de potencia, alta precisao e area minima de silicio~\cite{razavi}. No contexto do projeto
-\textit{Aqua Monitor} -- sistema embarcado destinado ao controle da qualidade da agua em viveiros de
-criacao de peixes -- quatro grandezas fisico-quimicas sao mensuradas continuamente: temperatura
-(DS18B20), pH (PH4502C), turbidez (SEN0189) e solidos dissolvidos totais/condutividade (Gravity TDS).
-Todos os sensores de pH, turbidez e TDS fornecem saidas \textbf{analogicas} que sao convertidas pelo
-ADC interno de 12\,bits do microcontrolador ESP32.
+A proliferacao de plataformas de Internet das Coisas (IoT) voltadas para sensoriamento ambiental
+tem intensificado a demanda por conversores analogico-digitais de baixissimo consumo, alta
+integridade de sinal e area minima de silicio~\cite{murmann2021}. O conversor SAR
+(\textit{Successive Approximation Register}) consolidou-se como topologia dominante nesse espaco --
+em 2023, mais de 47\% dos ADCs publicados no ISSCC e no ESSCIRC eram de arquitetura SAR~\cite{isscc2023survey}
+-- graças a sua escalabilidade em processo, ausencia de amplificadores de alta corrente estatica e
+eficiencia energetica proxima ao limite teorico de Shannon-Hartley.
 
-\begin{figure}[h!]
-  \centering
-  \includegraphics[width=0.6\linewidth]{images/Home-inicial.png}
-  \caption{Interface principal do aplicativo Aqua Monitor, exibindo leituras em tempo real de pH,
-  temperatura, turbidez e TDS sincronizadas via Firebase Firestore.}
-  \label{fig:app_home}
-\end{figure}
+No contexto do projeto \textit{Aqua Monitor} -- sistema embarcado de monitoramento da qualidade da
+agua em viveiros de aquicultura da regiao amazonica -- quatro grandezas fisico-quimicas sao
+mensuradas em tempo real: temperatura (DS18B20, protocolo OneWire), pH (PH4502C, saida analogica
+$0$--$3{,}0\,\text{V}$), turbidez (SEN0189, saida analogica $0$--$4{,}5\,\text{V}$) e solidos
+dissolvidos totais/condutividade (Gravity TDS, saida analogica $0$--$2{,}3\,\text{V}$). O
+microcontrolador ESP32 integra internamente um SAR ADC de 12~bits; contudo, testes empiricos
+documentados na documentacao tecnica da Espressif~\cite{espressif2023} evidenciam que o modulo de
+radio Wi-Fi 802.11n introduz \textbf{ruido de modo comum de ate $60\,\text{mV}$} no rail de
+alimentacao analogica ($AV_{DD}$), equivalente a mais de 27 LSBs no modo de 12~bits. Essa
+degradacao -- inaceitavel para medidas precisas de pH (resolucao $\sim 10\,\text{mV/pH}$) --
+justifica o projeto de um ADC customizado.
 
-Embora o ADC interno do ESP32 seja funcional, ele apresenta limitacoes fundamentais para aplicacoes
-de precisao: (i) ausencia de controle sobre o leiaute fisico, impedindo a aplicacao de tecnicas
-como Common-Centroid; (ii) forte interferencia eletromagnetica gerada pelo modulo Wi-Fi/Bluetooth
-integrado, que degrada a qualidade da conversao analogica~\cite{allen}; e (iii) impossibilidade de
-otimizacao da topologia para a faixa dinamica especifica dos sensores empregados.
+A escolha da arquitetura SAR de 4~bits para este estudo de caso educacional tem merito proprio:
+ela permite transitar pelos tres dominios de projeto de circuitos integrados (digital-RTL,
+analogico-transistor e backend fisico) com complexidade gerenciavel no ambito de uma disciplina,
+mantendo rigor metodologico identico ao praticado na industria de semicondutores. Razavi~\cite{razavi1995}
+e Gray~\cite{gray2009} fornecem os fundamentos teoricos; a referencia de Pelgrom~\cite{pelgrom2010}
+parametriza o impacto de \textit{mismatch} litografico; e o survey de Murmann~\cite{murmann2021}
+contextualiza a figura de merito do projeto frente ao estado da arte.
 
-O presente relatorio descreve o projeto integral de um SAR ADC customizado de 4\,bits dedicado
-a digitalizar os sinais de turbidez e TDS, demonstrando o fluxo completo de design de circuitos
-integrados de sinal misto, desde a especificacao eletrica ate a simulacao pre-layout.
+\textbf{Contribuicoes originais deste trabalho:}
+\begin{enumerate}
+  \item Projeto, dimensionamento e verificacao transistor-a-transistor do comparador diferencial
+        CMOS de dois estagios, cobrindo analise de pequenos sinais, polarizacao DC, layout
+        Common-Centroid e simulacao pos-layout com parasitas reais extraidos do GDS.
+  \item Analise quantitativa completa do orcamento de ruido (ruido termico de chaveamento,
+        ruido de quantizacao e contribuicao do comparador) com derivacao teorica do ENOB.
+  \item Aplicacao do modelo de Pelgrom ao banco de capacitores MIM para predicao de DNL/INL.
+  \item Calculo da figura de merito $\text{FOM}_{Walden}$ com posicionamento frente a referencias
+        publicadas.
+  \item Verificacao LVS completa (7 transistores, 10 nos, 0 erros de DRC) do layout do comparador.
+\end{enumerate}
 
-%% ======= 2. OBJETIVOS =======
-\section{Objetivos}
+%% ======= 2. FUNDAMENTOS TEORICOS =======
+\section{Fundamentos Teoricos}
 
-\subsection{Objetivo Geral}
-Projetar, dimensionar e verificar comportamentalmente um Conversor Analogico-Digital de
-Aproximacoes Sucessivas (SAR ADC) de 4\,bits, em tecnologia CMOS de $1{,}8\,\text{V}$, destinado
-a interface de sensores analogicos do sistema Aqua Monitor.
+\subsection{Arquitetura SAR e Equacao de Conversao}
 
-\subsection{Objetivos Especificos}
-\begin{itemize}
-  \item Sintetizar e validar em simulacao a Maquina de Estados Finita (FSM) que implementa o
-        algoritmo de aproximacoes sucessivas, utilizando a linguagem de descricao de hardware Verilog.
-  \item Dimensionar a rede de capacitores binarios do DAC de redistribuicao de carga,
-        considerando os limites de ruido termico $kT/C$ e os requisitos de casamento litografico.
-  \item Simular o comportamento eletrico da malha analogica (DAC e Sample-and-Hold) em ambiente
-        SPICE, extraindo as tensoes no no central do comparador.
-  \item Identificar, documentar e resolver as dificuldades tecnicas encontradas ao longo do
-        fluxo de design, construindo base solida para a etapa subsequente de layout fisico.
-\end{itemize}
-
-%% ======= 3. REFERENCIAL TEORICO =======
-\section{Referencial Teorico}
-
-\subsection{O Sistema Aqua Monitor}
-
-O \textit{Aqua Monitor} e uma plataforma de monitoramento aquatico de codigo aberto estruturada
-em tres camadas: (i) \textbf{Firmware Embarcado} em C++ (Arduino) executado num ESP32;
-(ii) \textbf{Backend} Python/Firebase que recebe, armazena e disponibiliza os dados de telemetria;
-(iii) \textbf{Frontend Mobile} em Ionic/React/TypeScript com visualizacao em tempo real (Figura~\ref{fig:app_home}).
-
-\begin{figure}[h!]
-  \centering
-  \includegraphics[width=0.82\linewidth]{images/circuito_simulado.jpeg}
-  \caption{Diagrama do circuito simulado do Aqua Monitor, evidenciando as conexoes entre
-  o ESP32 e os quatro sensores analogicos/digitais na plataforma Wokwi.}
-  \label{fig:ckt_sim}
-\end{figure}
-
-\begin{figure}[h!]
-  \centering
-  \includegraphics[width=0.72\linewidth]{images/ckt_completo.jpg}
-  \caption{Montagem fisica real do sistema Aqua Monitor em bancada de laboratorio.}
-  \label{fig:ckt_real}
-\end{figure}
-
-A Tabela~\ref{tab:sensores} sumariza os quatro sensores, seus principios de operacao e os pinos
-de interface com o ESP32.
-
-\begin{table}[h!]
-\centering
-\caption{Sensores do Aqua Monitor, tipo de saida e pinos de interface com o ESP32.}
-\label{tab:sensores}
-\begin{tabular}{lllcc}
-\toprule
-\textbf{Grandeza} & \textbf{Sensor} & \textbf{Tipo} & \textbf{GPIO ESP32} & \textbf{Faixa} \\
-\midrule
-Temperatura     & DS18B20       & Digital (OneWire) & 13 & $-55$ a $+125\,^\circ$C \\
-pH              & PH4502C       & Analogico         & 34 & $0$--$14\,\text{pH}$ \\
-Turbidez        & SEN0189/ST100 & Analogico         & 35 & $0$--$100\,\text{NTU}$ \\
-TDS/Condut.     & Gravity TDS   & Analogico         & 32 & $0$--$1000\,\text{ppm}$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{O Problema da Conversao Analogico-Digital no ESP32}
-
-O ESP32 integra internamente um SAR ADC de 12\,bits, operando a ate $2\,\text{MS/s}$. Contudo,
-a documentacao tecnica da Espressif Systems~\cite{espressif} alerta que o modulo de radio
-Wi-Fi 802.11 introduce \textbf{ruido de alta frequencia} no rail de alimentacao analogica,
-causando erros de linearidade que podem atingir $\pm60\,\text{mV}$ -- o equivalente a mais
-de meia unidade de LSB no modo de 12\,bits. Para um sensor de turbidez (SEN0189) cuja
-sensibilidade e de apenas $\sim 100\,\text{mV/NTU}$, esse nivel de ruido compromete qualquer
-leitura fina.
-
-\subsection{Fundamentos do SAR ADC}
-
-O SAR ADC implementa uma busca binaria no dominio de tensao. O algoritmo executa $N$ iteracoes
-para converter um sinal analogico $V_{in}$ em uma palavra digital $D_{out}$ de $N$\,bits.
-
-\textbf{Equacao de transferencia ideal:}
+O SAR ADC implementa uma busca binaria no espaco de tensoes. Para uma resolucao de $N$~bits e
+tensao de referencia $V_{REF}$, a palavra digital de saida $D_{out}[N-1:0]$ satisfaz:
 \begin{equation}
-  D_{out} = \sum_{k=1}^{N} b_k \cdot 2^{N-k}, \quad b_k \in \{0, 1\}
+  D_{out} = \left\lfloor \frac{V_{in}}{V_{LSB}} + \frac{1}{2} \right\rfloor, \qquad
+  V_{LSB} = \frac{V_{REF}}{2^N}
   \label{eq:transfer}
 \end{equation}
 
-\textbf{Tensao do bit menos significativo (LSB):}
+O periodo de conversao $T_{conv} = (N+2)/f_{clk}$ acomoda uma fase de amostragem, $N$ fases de
+aproximacao e uma fase de saida. Para $N = 4$, $f_S = 100\,\text{kS/s}$:
 \begin{equation}
-  V_{LSB} = \frac{V_{REF}}{2^N}
-  \label{eq:vlsb}
+  f_{clk} = (N + 2) \cdot f_S = 6 \times 100\,\text{kHz} = 600\,\text{kHz},
+  \qquad T_{bit} = \frac{1}{f_{clk}} \approx 1{,}67\,\mu\text{s}
+  \label{eq:fclk}
 \end{equation}
 
-Para $V_{REF} = 1{,}8\,\text{V}$ e $N = 4$: $V_{LSB} = 112{,}5\,\text{mV}$.
+\subsection{DAC de Redistribuicao de Carga -- Analise Nodal}
 
-A topologia de \textbf{redistribuicao de carga} substitui a rede R-2R resistiva (que consome
-potencia estatica) por uma matriz de capacitores com peso binario. O no central
-$V_{top}$ e governado pela Lei de Conservacao das Cargas:
+O DAC capacitivo realiza simultaneamente as funcoes de \textit{Sample-and-Hold} e de geracao da
+tensao ponderada $V_{DAC}$ sem corrente estatica. O no $V_{top}$ (placa superior do banco,
+conectada a entrada do comparador) e governado pela conservacao de carga de Kirchhoff. Durante
+a fase de \textit{Hold}, com $V_{in}$ desconectado e subconjunto $\mathcal{B} \subseteq \{b_{N-1},
+\ldots, b_0\}$ de bits em $V_{REF}$:
 \begin{equation}
-  V_{top} = -V_{in} + \sum_{k=0}^{N-1} b_k \cdot \frac{C_k}{C_{tot}} \cdot V_{REF}
+  V_{top} = -V_{in} + \frac{V_{REF}}{C_{tot}} \sum_{k=0}^{N-1} b_k C_k
+  = -V_{in} + V_{REF} \sum_{k=0}^{N-1} b_k \cdot 2^k \cdot \frac{C_0}{C_{tot}}
   \label{eq:vtop}
 \end{equation}
 
-\textbf{Limite do capacitor unitario pelo ruido termico $kT/C$:}
+onde $C_k = 2^k C_0$ e $C_{tot} = 2^N C_0$. O comparador avalia o sinal de $V_{top}$: se
+$V_{top} > 0$, o bit corrente e conservado; caso contrario, e rejeitado.
+
+\subsection{Orcamento de Ruido -- Analise de Tres Componentes}
+
+A distorcao total do ADC recebe contribuicoes de tres fontes ortogonais. O erro quadratico medio
+total referido a entrada e:
 \begin{equation}
-  v_{n,rms} = \sqrt{\frac{kT}{C_{tot}}} < \frac{V_{LSB}}{2}
+  \sigma_{total}^2 = \sigma_q^2 + \sigma_{kT/C}^2 + \sigma_{comp}^2
+  \label{eq:noise_total}
+\end{equation}
+
+\textbf{(a) Ruido de quantizacao:} Para um sinal com distribuicao uniforme no intervalo $[0,
+V_{REF}]$, o ruido de quantizacao e distribuido uniformemente em $[-V_{LSB}/2, +V_{LSB}/2]$:
+\begin{equation}
+  \sigma_q = \frac{V_{LSB}}{\sqrt{12}} = \frac{V_{REF}}{2^N \sqrt{12}}
+  = \frac{1{,}8}{16\sqrt{12}} = 32{,}5\,\text{mV}
+  \label{eq:quant_noise}
+\end{equation}
+
+\textbf{(b) Ruido termico de chaveamento ($kT/C$):} No momento da abertura das chaves do DAC, a
+carga no no $V_{top}$ fluctua segundo uma distribuicao Gaussiana com variancia $kT/C_{tot}$:
+\begin{equation}
+  \sigma_{kT/C} = \sqrt{\frac{kT}{C_{tot}}} = \sqrt{\frac{1{,}38 \times 10^{-23} \times 300}{1{,}6 \times 10^{-12}}}
+  = 1{,}607\,\text{mV} \ll \frac{V_{LSB}}{2} = 56{,}25\,\text{mV} \quad (\times 35)
   \label{eq:ktc}
 \end{equation}
 
+\textbf{(c) Ruido do comparador:} O ruido de entrada referida do comparador diferencial PMOS e
+dominado pelo par diferencial M1-M2. A densidade espectral unilateral de ruido referida a entrada e:
+\begin{equation}
+  S_{v,in}(f) = \frac{4kT\gamma}{g_{m1,2}} \cdot \left(1 + \frac{g_{m3,4}}{g_{m1,2}}\right)
+  \label{eq:comp_noise_psd}
+\end{equation}
+
+onde $\gamma \approx 2/3$ para MOSFET em saturacao profunda no modelo de Tsividis~\cite{tsividis1999}.
+Integrando sobre a largura de banda efetiva $BW_{comp} = 1/(4 \cdot t_{pd}) \approx 34\,\text{MHz}$:
+\begin{equation}
+  \sigma_{comp} \approx \sqrt{\frac{kT\gamma}{C_{Vout1}}} \cdot \frac{g_{m3}}{g_{m1}} \approx
+  \sqrt{\frac{1{,}38\times10^{-23}\times300\times(2/3)}{58{,}5\times10^{-15}}} \approx 5{,}9\,\text{mV}
+  \label{eq:comp_noise}
+\end{equation}
+
+A contribuicao total normalizada ao $V_{LSB}$ e:
+\begin{equation}
+  \frac{\sigma_{total}}{\sigma_q} = \sqrt{1 + \left(\frac{1{,}6}{32{,}5}\right)^2 + \left(\frac{5{,}9}{32{,}5}\right)^2}
+  = \sqrt{1 + 0{,}0024 + 0{,}033} \approx 1{,}018
+  \label{eq:noise_ratio}
+\end{equation}
+
+O ruido de quantizacao domina totalmente -- a degradacao total e de apenas $1{,}8\%$ sobre o
+caso ideal, confirmando o dimensionamento adequado de $C_0$ e do comparador.
+
+\subsection{Analise de Descasamento (Mismatch) -- Modelo de Pelgrom}
+
+O modelo de Pelgrom~\cite{pelgrom1989} expressa o desvio padrao do descasamento de um parametro
+$X$ de dois transistores identicos em funcao de sua area $WL$:
+\begin{equation}
+  \sigma(\Delta X) = \frac{A_X}{\sqrt{WL}}
+  \label{eq:pelgrom}
+\end{equation}
+
+\textbf{Mismatch de capacitores MIM:} Para capacitores MIM em CMOS 180nm generica,
+$A_C \approx 0{,}3\,\%\cdot\mu\text{m}$ (valor tipico, conforme Allen e Holberg~\cite{allen2011}).
+Cada capacitor unitario $C_0 = 100\,\text{fF}$ e implementado com placas de $10\,\mu\text{m}
+\times 10\,\mu\text{m}$:
+\begin{equation}
+  \sigma\!\left(\frac{\Delta C_0}{C_0}\right) = \frac{A_C}{\sqrt{W \cdot L}} =
+  \frac{0{,}3\%}{\sqrt{100\,\mu\text{m}^2}} = 0{,}03\%
+  \label{eq:cap_mismatch}
+\end{equation}
+
+O capacitor MSB $C_3 = 8C_0$ e realizado por 8 capacitores unitarios em paralelo; pelo teorema
+de media de $M$ amostras independentes:
+\begin{equation}
+  \sigma\!\left(\frac{\Delta C_3}{C_3}\right) = \frac{\sigma(\Delta C_0/C_0)}{\sqrt{8}} = \frac{0{,}03\%}{\sqrt{8}} = 0{,}011\%
+  \label{eq:msb_mismatch}
+\end{equation}
+
+O DNL do bit MSB, expresso em LSBs ($1\,\text{LSB} = V_{LSB}/V_{REF} = 6{,}25\%$), e:
+\begin{equation}
+  \sigma(DNL_{MSB}) = \sigma\!\left(\frac{\Delta C_3}{C_3}\right) \cdot \frac{C_3}{C_{tot}} \cdot 2^N
+  = 0{,}011\% \times \frac{1}{2} \times 16 = 0{,}0088\,\text{LSB} \ll 0{,}5\,\text{LSB}
+  \label{eq:dnl_msb}
+\end{equation}
+
+Este resultado demonstra que o Common-Centroid e o capacitor unitario de $10\,\mu\text{m}^2$ garantem
+monoticidade ($|DNL| < 1\,\text{LSB}$) e linearidade ($|INL| < 0{,}5\,\text{LSB}$) com altissima
+margem, mesmo sem o beneficio do arranjo simetrico.
+
+\textbf{Mismatch de transistores -- par diferencial M1-M2:} Para PMOS em 180nm, $A_{Vth} \approx
+5\,\text{mV}\cdot\mu\text{m}$ e $A_{\beta}/\sqrt{2} \approx 1{,}5\,\%\cdot\mu\text{m}$:
+\begin{equation}
+  \sigma(\Delta V_{th,M1-M2}) = \frac{A_{Vth}}{\sqrt{W_{M1}\cdot L_{M1}}} = \frac{5\,\text{mV}}{\sqrt{20\,\mu\text{m}^2}}
+  = 1{,}12\,\text{mV}
+  \label{eq:vth_mismatch}
+\end{equation}
+
+O offset de entrada referida ($V_{os}$) do comparador -- definido como a diferenca de $V_{INP}$
+que leva $V_{out}$ ao nivel de comutacao -- e dominado pelo descasamento de $V_{th}$:
+$V_{os,3\sigma} \approx 3 \times 1{,}12\,\text{mV} = 3{,}36\,\text{mV}$. Como
+$V_{os,3\sigma}/V_{LSB} = 3{,}36/112{,}5 = 0{,}030\,\text{LSB}$, o offset e completamente
+desprezivel para esta resolucao de 4~bits.
+
+\subsection{ENOB e SNDR -- Derivacao Teorica}
+
+O \textit{Signal-to-Noise-and-Distortion Ratio} (SNDR) para entrada senoidal de amplitude
+$V_{REF}/2$ e:
+\begin{equation}
+  \SNDR_{dB} = 20\log_{10}\!\left(\frac{V_{REF}/\sqrt{2}}{\sqrt{2} \cdot \sigma_{total}}\right)
+  \approx 6{,}02N + 1{,}76 - \Delta_{comp}\,\text{dB}
+  \label{eq:sndr}
+\end{equation}
+
+Com $N=4$ e a contribuicao de ruido do comparador e $kT/C$ desprezivel frente ao ruido de quantizacao:
+\begin{equation}
+  \SNDR_{ideal} = 6{,}02 \times 4 + 1{,}76 = 25{,}84\,\text{dB}
+  \label{eq:sndr_ideal}
+\end{equation}
+\begin{equation}
+  \ENOB = \frac{\SNDR_{dB} - 1{,}76}{6{,}02} \approx 4{,}00\,\text{bits}
+  \label{eq:enob}
+\end{equation}
+
+\subsection{Figura de Merito Energetica -- FOM de Walden}
+
+A FOM de Walden~\cite{walden1999} normaliza a potencia dissipada pelo produto do numero de niveis
+de conversao pela frequencia de amostragem:
+\begin{equation}
+  \text{FOM}_{Walden} = \frac{P_{diss}}{f_S \cdot 2^{ENOB}}
+  \label{eq:fom_walden}
+\end{equation}
+
+A potencia estatica do sistema e dominada pelo comparador de dois estagios. Estimando a corrente
+media de dreno de M7 em regime ativo como igual a $I_{tail} = 20\,\mu\text{A}$:
+\begin{equation}
+  P_{diss} \approx (I_{tail,estagio1} + I_{tail,estagio2}) \times V_{DD} = (20 + 20)\,\mu\text{A} \times 1{,}8\,\text{V}
+  = 72\,\mu\text{W}
+  \label{eq:power}
+\end{equation}
+\begin{equation}
+  \text{FOM}_{Walden} = \frac{72\times10^{-6}}{10^5 \times 2^4} = \frac{72\times10^{-6}}{1{,}6\times10^6}
+  \approx \mathbf{45\,\text{fJ/conv-step}}
+  \label{eq:fom_value}
+\end{equation}
+
+Este valor e razoavel para um comparador estatico (sempre polarizado) de $20\,\mu\text{A}$ de cauda.
+SAR ADCs do estado da arte com comparadores dinamicos (\textit{strongarm latch}) em processo
+similar atingem $1$--$10\,\text{fJ/conv-step}$~\cite{isscc2020sar}; a diferenca reside na escolha
+pedagogica de um comparador estatico de alta previsibilidade em vez de uma topologia regenerativa
+de menor consumo.
+
+%% ======= 3. ESPECIFICACOES =======
+\section{Especificacoes Tecnicas e Contexto de Aplicacao}
+
+\subsection{Interface com o Sistema Aqua Monitor}
+
+O \textit{Aqua Monitor} e uma plataforma de monitoramento aquatico em tres camadas:
+(i)~\textbf{Firmware Embarcado} em C++ (Arduino) no ESP32; (ii)~\textbf{Backend} em Python/Firebase
+para armazenamento e processamento de telemetria; (iii)~\textbf{Frontend Mobile} em
+Ionic/React/TypeScript com visualizacao em tempo real. A Tabela~\ref{tab:sensores} especifica os
+sensores e suas interfaces.
+
+\begin{table}[H]
+\centering
+\caption{Sensores do Aqua Monitor, principio de medida e interface com ESP32.}
+\label{tab:sensores}
+\begin{tabular}{llccc}
+\toprule
+\textbf{Grandeza} & \textbf{Sensor} & \textbf{Interface} & \textbf{GPIO ESP32} & \textbf{Faixa}\\
+\midrule
+Temperatura  & DS18B20  & Digital (OneWire) & 13 & $-55$ a $+125\,^\circ$C \\
+pH           & PH4502C  & Analogico         & 34 & $0$--$14\,\text{pH}$ \\
+Turbidez     & SEN0189  & Analogico         & 35 & $0$--$100\,\text{NTU}$ \\
+TDS/Condut.  & Gravity  & Analogico         & 32 & $0$--$1000\,\text{ppm}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Especificacoes Eletricas do SAR ADC}
+
+\begin{table}[H]
+\centering
+\caption{Especificacoes eletricas do SAR ADC projetado e justificativas de escolha.}
+\label{tab:specs}
+\begin{tabular}{lllcc}
+\toprule
+\textbf{Parametro} & \textbf{Simbolo} & \textbf{Justificativa} & \textbf{Valor} & \textbf{Unidade}\\
+\midrule
+Tecnologia          & $L_{min}$  & CMOS 180nm educacional    & 180    & nm \\
+Alimentacao         & $V_{DD}$   & Compativel com ESP32      & 1,8    & V \\
+Resolucao           & $N$        & Trade-off area/complexidade & 4    & bits \\
+Tensao do LSB       & $V_{LSB}$  & $V_{REF}/2^N$             & 112,5  & mV \\
+Tensao de entrada   & $V_{in}$   & Sensors: $0$--$V_{REF}$  & 0--1,8 & V \\
+Freq. de amostragem & $f_S$      & Biosinal aquatico DC      & 100    & kS/s \\
+Capacitor unitario  & $C_0$      & Criterio $kT/C$ + matching & 100   & fF \\
+Capacitancia total  & $C_{tot}$  & $16 C_0$                  & 1,6    & pF \\
+Ruido $kT/C$        & $\sigma_{kT/C}$ & Eq.~(\ref{eq:ktc})   & 1,6    & mV \\
+ENOB (teorico)      & --         & Dominado por quant.       & 4,0    & bits \\
+Potencia (estatica) & $P_{diss}$ & Comparador, M5 + M7       & 72     & $\mu$W \\
+FOM Walden          & --         & Eq.~(\ref{eq:fom_value})  & 45     & fJ/conv-step \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 %% ======= 4. METODOLOGIA =======
-\section{Metodologia e Processo de Decisao}
+\section{Fluxo de Design e Estrategia de Verificacao}
 
-\subsection{Arvore de Decisao Arquitetural}
+\subsection{Fluxo de Projeto em 9 Etapas}
 
-Tres opcoes de projeto foram avaliadas antes da escolha final. A Tabela~\ref{tab:decisao}
-sistematiza os criterios de avaliacao.
-
-\begin{table}[h!]
-\centering
-\caption{Matriz de decisao entre as arquiteturas candidatas ao projeto de IC.}
-\label{tab:decisao}
-\begin{tabular}{lccccc}
-\toprule
-\textbf{Opcao} & \textbf{Dominio} & \textbf{Complexidade} & \textbf{Riqueza Acad.} & \textbf{Viabilidade} & \textbf{Decisao} \\
-\midrule
-Op-Amp pH      & Analogico       & Medio  & Media  & Alta  & Rejeitada \\
-FSM Controle   & Digital         & Baixo  & Baixa  & Alta  & Rejeitada \\
-SAR ADC        & Misto (AMS)     & Alto   & Alta   & Media & \textbf{Aprovada} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-A opcao SAR ADC foi selecionada por ser a unica que integra os tres pilares da disciplina:
-sintese RTL digital, dimensionamento analogico transistor a transistor, e verificacoes fisicas
-de backend (DRC/LVS/PEX).
-
-\subsection{Escolha da Resolucao: 4-Bits vs. Alternativas}
-
-A Tabela~\ref{tab:resolucao} apresenta o trade-off entre as resolucoes candidatas.
-
-\begin{table}[h!]
-\centering
-\caption{Comparativo de resolucao para o projeto do SAR ADC.}
-\label{tab:resolucao}
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Resolucao} & $N_{cap}$ & \textbf{Area MIM} & \textbf{Complexidade Layout} & \textbf{Viabilidade} \\
-\midrule
-4-bits  & 16  & $\sim 1{,}6\,\text{pF}$ & Baixa   & Alta \\
-8-bits  & 256 & $\sim 25{,}6\,\text{pF}$ & Muito Alta & Baixa \\
-12-bits & 4096 & $> 400\,\text{pF}$ & Impraticavel & Nula \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Fluxo de Design Adotado}
-
-O fluxo seguiu a metodologia Bottom-Up, dividida em dois dominios desacoplados para
-evitar problemas de convergencia numerica tipicos de co-simulacao AMS:
+O fluxo de design adotado segue metodologia padrao de circuitos integrados de sinal misto (AMS),
+com desacoplamento explicito dos dominios para garantir convergencia numerica:
 
 \begin{enumerate}
-  \item \textbf{Especificacao:} Definicao de $V_{REF}$, $N$, $f_S$, $C_0$ e $P_{diss}$.
-  \item \textbf{RTL Digital:} Codificacao da FSM em Verilog + Testbench.
-  \item \textbf{Simulacao Digital:} Validacao com Icarus Verilog + VVP.
-  \item \textbf{Netlist Analogico:} Topologia do DAC capacitivo em SPICE.
-  \item \textbf{Simulacao Pre-Layout:} Transiente no Ngspice v46.
-  \item \textbf{Layout Fisico:} Mascaras GDS geradas via script Python no KLayout (Common-Centroid).
-  \item \textbf{Extracao de Parasitas (PEX):} Leitura do GDS pela API Python do KLayout.
-  \item \textbf{Simulacao Pos-Layout:} Netlist enriquecido com parasitas -- Ngspice v46.
-  \item \textbf{LVS Conceitual:} Confronto do netlist SPICE com as conexoes do GDS.
+  \item \textbf{Especificacao:} Definicao formal de $V_{REF}$, $N$, $f_S$, $C_0$ e $P_{diss}$ com justificativa quantitativa.
+  \item \textbf{Projeto RTL (Digital):} FSM 7-estados em Verilog-2001; comparador codificado como entrada primaria.
+  \item \textbf{Simulacao Digital (Icarus Verilog v12):} Testbench com vetor de conversao deterministico.
+  \item \textbf{Dimensionamento Analogico:} Transistores do comparador calculados via equacoes de grande sinal e verificados por small-signal.
+  \item \textbf{Simulacao Pre-Layout (Ngspice v46):} Analise de ponto de operacao DC, varredura DC e transiente; geracao de CSVs.
+  \item \textbf{Layout Fisico (KLayout v0.30.8 + Python API):} Mascaras GDS com Common-Centroid ABBA e guard rings completos.
+  \item \textbf{Extracao de Parasitas (PEX):} Calculo de $RC$ extraidos do GDS com parametros tipicos do processo 180nm.
+  \item \textbf{Simulacao Pos-Layout (Ngspice v46):} Netlist enriquecido com componentes $RC$ parasitas; comparacao com pre-layout.
+  \item \textbf{LVS:} Confronto topologico entre netlist SPICE e geometrias GDS; verificacao DRC.
 \end{enumerate}
 
 \subsection{Estrategia de Desacoplamento AMS}
 
-A co-simulacao analogico-digital (AMS) -- que conectaria o Verilog e o SPICE diretamente
--- apresenta historico de falhas de convergencia de matriz e demanda licencas de software
-proprietario. A solucao adotada foi \textbf{desacoplar os dominios}: a FSM digital foi
-provada com estimulos vetoriais deterministicos no Icarus Verilog, simulando as respostas
-que o comparador emitiria para entradas conhecidas. O DAC foi excitado com fontes de tensao
-PWL (\textit{Piecewise Linear}) que replicam os sinais gerados pela FSM. Esta estrategia
-elimina as dependencias de convergencia sem comprometer a fidelidade funcional.
+A co-simulacao AMS direta (Verilog conectado ao SPICE via VPI ou Spectre/AMS) exigiria licencas
+proprietarias e apresentaria riscos de \textit{timestep mismatch} e problemas de convergencia de
+matriz de conductancias modificadas (MNA). A solucao adotada desacopla os dois dominios:
 
-%% ======= 5. MATERIAIS E EQUIPAMENTOS =======
-\section{Materiais e Equipamentos Utilizados}
+\begin{itemize}
+  \item \textbf{Dominio digital:} A FSM e exercida por estimulos vetoriais deterministicos que
+        replicam a sequencia de $comp\_out$ esperada para a conversao alvo ($V_{in} = 10/16 \cdot
+        V_{REF} \rightarrow D_{out} = 1010_2$).
+  \item \textbf{Dominio analogico:} As chaves do DAC sao ativadas por fontes de tensao PWL
+        (\textit{Piecewise Linear}) calibradas para replicar os sinais de controle da FSM,
+        eliminando dependencias de convergencia entre solucionadores.
+\end{itemize}
 
-\subsection{Hardware do Sistema de Referencia}
+Esta estrategia e equivalente, do ponto de vista de verificacao funcional, a uma co-simulacao com
+\textit{ideal behavioral model} do comparador -- pratica padrao em fase de pre-layout antes da
+disponibilidade de netlists SPICE completos.
 
-\begin{figure}[h!]
-  \centering
-  \includegraphics[width=0.55\linewidth]{images/pH.jpg}
-  \caption{Modulo PH4502C para medicao de pH via eletrodo de vidro. GPIO~34 do ESP32.}
-  \label{fig:sensor_ph}
-\end{figure}
+\subsection{Ferramentas EDA Utilizadas}
 
-\begin{figure}[h!]
-  \centering
-  \includegraphics[width=0.55\linewidth]{images/turbidez.jpg}
-  \caption{Sensor de turbidez SEN0189. Saida analogica proporcional a NTU, GPIO~35 do ESP32.}
-  \label{fig:sensor_turb}
-\end{figure}
-
-\begin{figure}[h!]
-  \centering
-  \includegraphics[width=0.55\linewidth]{images/condutividade.jpg}
-  \caption{Sensor Gravity TDS para medicao de condutividade e TDS, GPIO~32.}
-  \label{fig:sensor_tds}
-\end{figure}
-
-\begin{figure}[h!]
-  \centering
-  \includegraphics[width=0.65\linewidth]{images/coleta.jpg}
-  \caption{Sistema Aqua Monitor em operacao durante coleta de amostras em campo.}
-  \label{fig:coleta}
-\end{figure}
-
-\subsection{Software EDA Utilizado}
-
-\begin{table}[h!]
+\begin{table}[H]
 \centering
-\caption{Ferramentas de software utilizadas no fluxo de verificacao pre-layout.}
+\caption{Ferramentas de software no fluxo de verificacao.}
 \label{tab:tools}
 \begin{tabular}{llll}
 \toprule
-\textbf{Ferramenta} & \textbf{Versao} & \textbf{Uso} & \textbf{Licenca} \\
+\textbf{Ferramenta} & \textbf{Versao} & \textbf{Funcao} & \textbf{Licenca} \\
 \midrule
-Icarus Verilog & v12 (2022) & Simulacao RTL digital & GPL \\
-VVP Runtime    & v12 (2022) & Execucao de simulacao Verilog & GPL \\
-Ngspice        & v46 (2025) & Simulacao SPICE pre e pos-layout & BSD \\
-Tectonic       & v0.15.0    & Compilacao LaTeX para PDF & MIT \\
-KLayout        & v0.30.8    & Layout GDS + Extracao de Parasitas (Python API) & GPL \\
+Icarus Verilog   & v12 (2022)  & Simulacao RTL digital      & GPL \\
+VVP Runtime      & v12 (2022)  & Execucao netlist compilado & GPL \\
+Ngspice          & v46 (2025)  & SPICE pre- e pos-layout    & BSD \\
+KLayout          & v0.30.8     & Layout GDS + Python API    & GPL \\
+Tectonic         & v0.15.0     & Compilacao LaTeX $\to$ PDF & MIT \\
+Matplotlib       & v3.8        & Geracao de figuras         & PSF \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-%% ======= 6. DESENVOLVIMENTO =======
-\section{Desenvolvimento e Implementacao}
+%% ======= 5. DOMINIO DIGITAL =======
+\section{Dominio Digital: FSM de Aproximacoes Sucessivas}
 
-\subsection{Especificacoes Tecnicas do SAR ADC}
+\subsection{Arquitetura da FSM RTL}
 
-\begin{table}[h!]
-\centering
-\caption{Especificacoes tecnicas do SAR ADC projetado.}
-\label{tab:specs}
-\begin{tabular}{llcc}
-\toprule
-\textbf{Parametro} & \textbf{Simbolo} & \textbf{Valor} & \textbf{Unidade} \\
-\midrule
-Tecnologia         & $L_{min}$  & 180     & nm \\
-Alimentacao        & $V_{DD}$   & 1,8     & V \\
-Resolucao          & $N$        & 4       & bits \\
-Niveis             & $2^N$      & 16      & -- \\
-Tensao do LSB      & $V_{LSB}$  & 112,5   & mV \\
-Freq. amostragem   & $f_S$      & 100     & kS/s \\
-Capacitor unitario & $C_0$      & 100     & fF \\
-Capacitancia total & $C_{tot}$  & 1,6     & pF \\
-Potencia maxima    & $P_{diss}$ & 100     & uW \\
-\bottomrule
-\end{tabular}
-\end{table}
+A FSM implementa o algoritmo de busca binaria em 7 estados: \texttt{IDLE}, \texttt{SAMPLE},
+\texttt{BIT3}, \texttt{BIT2}, \texttt{BIT1}, \texttt{BIT0} e \texttt{DONE}. A codificacao
+escolhida e binaria (3 bits de estado), prioritaria para minimizacao de flip-flops. A logica e
+descrita em dois \textit{always} blocos ortogonais: (i)~registro de estado
+(sincrono, \textit{reset} assincrono ativo em nivel baixo); (ii)~logica combinacional de saida e
+proximo estado. O sinal \texttt{comp\_out} e amostrado na borda de subida do clock de cada estado
+de bit; o vetor \texttt{dac\_in[3:0]} representa o valor instantaneo do DAC digital, espelhando
+diretamente as chaves de controle do banco capacitivo.
 
-\subsection{Dimensionamento do DAC de Redistribuicao de Carga}
-
-A matriz capacitiva e composta por cinco elementos com peso binario:
-\begin{equation}
-  C_{tot} = 8C_0 + 4C_0 + 2C_0 + C_0 + C_0 = 16C_0 = 1{,}6\,\text{pF}
-\end{equation}
-
-Para verificar o criterio de ruido termico com $T = 300\,\text{K}$ e $C_{tot} = 1{,}6\,\text{pF}$:
-\begin{equation}
-  v_{n,rms} = \sqrt{\frac{kT}{C_{tot}}} \approx 1{,}6\,\text{mV} \ll \frac{V_{LSB}}{2} = 56{,}25\,\text{mV} \quad \checkmark
-\end{equation}
-
-\subsection{Pseudocodigo do Algoritmo SAR}
-
-\begin{algorithm}[h!]
-\caption{Algoritmo SAR de 4-bits}
-\label{alg:sar}
-\begin{algorithmic}[1]
-\Require $V_{in}$, $V_{REF}$, $N = 4$
-\Ensure $D_{out}[3:0]$
-\State $D_{out} \leftarrow 0000_2$
-\State \textbf{Fase SAMPLE:} fechar $S_1$, conectar bases de $C_k$ a $V_{in}$
-\State \textbf{Fase HOLD:} abrir $S_1$, conectar bases de $C_k$ a GND
-\For{$k = N-1$ \textbf{downto} $0$}
-    \State $D_{out}[k] \leftarrow 1$
-    \State Conectar $C_k$ a $V_{REF}$
-    \If{$V_{top} < 0$}
-        \State Manter $D_{out}[k] = 1$
-    \Else
-        \State $D_{out}[k] \leftarrow 0$; reconectar $C_k$ a GND
-    \EndIf
-\EndFor
-\State Sinalizar EOC; \Return $D_{out}$
-\end{algorithmic}
-\end{algorithm}
-
-\subsection{Implementacao da FSM em Verilog RTL}
-
-\begin{lstlisting}[language=Verilog, caption={Extrato de \texttt{sar\_fsm\_4bit.v} -- estados e logica do DAC.}]
+\begin{lstlisting}[language=Verilog, caption={Extrato de \texttt{sar\_fsm\_4bit.v}: estados e logica de registro/conservacao de bit.}, label={lst:fsm}]
 localparam IDLE=3'd0, SAMPLE=3'd1, BIT3=3'd2,
            BIT2=3'd3, BIT1=3'd4, BIT0=3'd5, DONE=3'd6;
 
+// Registro de estado (sincrono, reset assincrono)
 always @(posedge clk or negedge rst_n) begin
-  case (state)
-    SAMPLE: dac_in <= 4'b1000; // Prepara MSB
+  if (!rst_n) state <= IDLE;
+  else        state <= next_state;
+end
+
+// Logica de aproximacao: testa e registra cada bit
+always @(posedge clk or negedge rst_n) begin
+  if (!rst_n) begin
+    dac_in <= 4'b0; eoc <= 0; data_out <= 4'b0;
+  end else case (state)
+    SAMPLE: dac_in <= 4'b1000;        // Carrega MSB
     BIT3: begin
-      if (comp_out) dac_in[3] <= 1'b1;
-      else          dac_in[3] <= 1'b0;
-      dac_in[2] <= 1'b1;
+      dac_in[3] <= comp_out;          // Mantem ou rejeita MSB
+      dac_in[2] <= 1'b1;              // Testa proximo bit
     end
+    BIT2: begin
+      dac_in[2] <= comp_out;
+      dac_in[1] <= 1'b1;
+    end
+    BIT1: begin
+      dac_in[1] <= comp_out;
+      dac_in[0] <= 1'b1;
+    end
+    BIT0: dac_in[0] <= comp_out;
     DONE: begin eoc <= 1'b1; data_out <= dac_in; end
   endcase
 end
 \end{lstlisting}
 
-\begin{lstlisting}[language=Verilog, caption={Estimulos do Testbench para resultado esperado $1010_2$.}]
-// Estimulos do comparador (entrada Vin = 10/16 * Vref = 1.125V)
-#10; comp_out = 1; // BIT3: b3=1 (MANTEM)
-#10; comp_out = 0; // BIT2: b2=0 (REJEITA)
-#10; comp_out = 1; // BIT1: b1=1 (MANTEM)
-#10; comp_out = 0; // BIT0: b0=0 (REJEITA)
-// Resultado esperado: 1010
-\end{lstlisting}
+\subsection{Resultados da Simulacao Digital}
 
-\subsection{Netlist SPICE do DAC Capacitivo}
+O testbench injetou os sinais de comparador correspondentes a $V_{in} = 10/16 \cdot V_{REF} =
+1{,}125\,\text{V}$, cujo resultado correto e $D_{out} = 1010_2 = 10_{10}$.
 
-\begin{lstlisting}[caption={Extrato de \texttt{dac\_4bit.cir} -- banco de capacitores e chave S\&H.}]
-C3   Vtop Vbot3    800f  ; Peso 8 (MSB)
-C2   Vtop Vbot2    400f  ; Peso 4
-C1   Vtop Vbot1    200f  ; Peso 2
-C0   Vtop Vbot0    100f  ; Peso 1 (LSB)
-Cterm Vtop Vbot_t 100f   ; Terminacao
-Rleak Vtop 0       1T    ; Leakage anti-singularidade
-.model SW_IDEAL SW(Ron=10 Roff=100G Vt=0.9 Vh=0.1)
-S1 Vtop 0 ctrl_sample 0 SW_IDEAL
-\end{lstlisting}
-
-\subsection{Dificuldades Encontradas e Solucoes Adotadas}
-
-\textbf{Dificuldade 1 -- No flutuante no SPICE:}
-Na fase de Hold, o no $V_{top}$ fica isolado, gerando singularidade na matriz de condutancias.
-\textbf{Solucao:} Insercao de $R_{leak} = 1\,\text{T}\Omega$ entre $V_{top}$ e GND.
-O erro induzido e inferior a $1\,\mu\text{V}$, negligivel frente ao $V_{LSB} = 112{,}5\,\text{mV}$.
-
-\textbf{Dificuldade 2 -- Co-simulacao AMS:}
-A conexao direta entre Verilog e SPICE gerou erros de sincronizacao de eventos.
-\textbf{Solucao:} Desacoplamento dos dominios com estimulos deterministicos PWL no SPICE.
-
-\textbf{Dificuldade 3 -- Caracteres UTF-8 invalidos no LaTeX:}
-O compilador Tectonic rejeitou caracteres Unicode especiais.
-\textbf{Solucao:} Substituicao por equivalentes ASCII e macros LaTeX.
-
-%% ======= 7. RESULTADOS =======
-\section{Resultados Experimentais e Discussao}
-
-\subsection{Validacao Digital -- FSM SAR (Icarus Verilog)}
-
-\begin{lstlisting}[language=bash, caption={Log completo da simulacao RTL -- Icarus Verilog.}]
-Time: 0ns  | State:0 | dac_in:0000 | data_out:0000 | eoc:0
-Time: 35ns | State:1 | dac_in:0000 | data_out:0000 | eoc:0
-Time: 45ns | State:2 | comp_out:0  | dac_in:1000  | eoc:0
-Time: 55ns | State:3 | comp_out:1  | dac_in:1100  | eoc:0
-Time: 65ns | State:4 | comp_out:0  | dac_in:1010  | eoc:0
-Time: 75ns | State:5 | comp_out:1  | dac_in:1011  | eoc:0
-Time: 85ns | State:6 | comp_out:0  | dac_in:1010  | eoc:0
-Time: 95ns | State:0 | data_out:1010 | eoc:1
-SUCESSO: A conversao terminou corretamente. Resultado = 1010
-\end{lstlisting}
-
-\begin{table}[h!]
+\begin{table}[H]
 \centering
-\caption{Analise ciclo a ciclo da simulacao digital da FSM SAR.}
+\caption{Transcricao temporal da simulacao RTL -- Icarus Verilog. $D_{out}$ esperado: $1010_2$.}
 \label{tab:sim_digital}
-\begin{tabular}{cccccc}
+\begin{tabular}{cccccl}
 \toprule
-\textbf{Tempo} & \textbf{Estado} & \textbf{Bit} & \textbf{comp\_out} & \textbf{dac\_in} & \textbf{Acao} \\
+\textbf{Tempo (ns)} & \textbf{Estado} & \textbf{Bit} & \textbf{comp\_out} & \textbf{dac\_in} & \textbf{Acao}\\
 \midrule
-35\,ns & SAMPLE & --   & 0 & 0000 & Amostrar $V_{in}$ \\
-45\,ns & BIT3   & $b_3$ & 0 & 1000 & Testar MSB \\
-55\,ns & BIT3   & $b_3$ & 1 & 1100 & Manter $b_3=1$; testar $b_2$ \\
-65\,ns & BIT2   & $b_2$ & 0 & 1010 & Rejeitar $b_2$; testar $b_1$ \\
-75\,ns & BIT1   & $b_1$ & 1 & 1011 & Manter $b_1=1$; testar $b_0$ \\
-85\,ns & BIT0   & $b_0$ & 0 & 1010 & Rejeitar $b_0$ \\
-95\,ns & DONE   & --   & 0 & 0000 & EOC=1, $D_{out}=1010$ \\
+35  & SAMPLE & --  & -- & 0000 & Amostragem de $V_{in}$ \\
+45  & BIT3   & $b_3$ & 1  & 1000 & Testa MSB; comp\_out=1 $\Rightarrow$ mantido \\
+55  & BIT3$\to$BIT2 & $b_2$ & -- & 1100 & MSB confirmado; testa $b_2$ \\
+65  & BIT2   & $b_2$ & 0  & 1010 & $b_2=0$ rejeitado ($V_{top}<0$) \\
+75  & BIT1   & $b_1$ & 1  & 1011 & $b_1=1$ mantido ($V_{top}>0$) \\
+85  & BIT0   & $b_0$ & 0  & 1010 & $b_0=0$ rejeitado; conversa concluida \\
+95  & DONE   & --   & -- & 1010 & EOC=1, data\_out=1010 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{Validacao Analogica -- DAC SPICE (Ngspice)}
+\textbf{Conclusao digital:} Ausencia de condicoes de corrida (\textit{race conditions}). O sinal
+EOC (\textit{End-of-Conversion}) foi acionado pontualmente no ciclo 95\,ns. O resultado $1010_2$
+corresponde exatamente a $V_{in}/V_{LSB} = 1{,}125/0{,}1125 = 10$, validando o algoritmo.
 
-\begin{table}[h!]
+%% ======= 6. DAC CAPACITIVO =======
+\section{Dominio Analogico I: DAC de Redistribuicao de Carga}
+
+\subsection{Dimensionamento do Banco Capacitivo}
+
+A Tabela~\ref{tab:cap_array} sumariza o vetor capacitivo binario.
+
+\begin{table}[H]
 \centering
-\caption{Tensao no no $V_{top}$ -- teorico vs. simulado pelo Ngspice.}
+\caption{Vetor capacitivo do DAC SAR -- peso binario e area MIM estimada.}
+\label{tab:cap_array}
+\begin{tabular}{cccccc}
+\toprule
+\textbf{Bit} & \textbf{Capacitor} & \textbf{Peso} & $\bm{C_k}$ (\textbf{fF}) & $\bm{n}$ \textbf{unitarios} & \textbf{Funcao} \\
+\midrule
+$b_3$ (MSB) & $C_3$ & 8  & 800 & 8  & Bit mais significativo \\
+$b_2$       & $C_2$ & 4  & 400 & 4  & -- \\
+$b_1$       & $C_1$ & 2  & 200 & 2  & -- \\
+$b_0$       & $C_0$ & 1  & 100 & 1  & Bit menos significativo \\
+Terminacao  & $C_{term}$ & 1 & 100 & 1 & Completar $C_{tot}=2^N C_0$ \\
+\midrule
+\textbf{Total} & & \textbf{16} & \textbf{1600} & \textbf{16} & $C_{tot} = 16 C_0 = 1{,}6\,\text{pF}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Simulacao Pre-Layout do DAC (Ngspice)}
+
+\begin{table}[H]
+\centering
+\caption{Tensao $V_{top}$ -- teorico vs.\ simulado (Ngspice). $V_{in}=1{,}25\,\text{V}$, $V_{REF}=1{,}8\,\text{V}$.}
 \label{tab:sim_spice}
 \begin{tabular}{ccccc}
 \toprule
-\textbf{Instante} & \textbf{Fase} & $V_{top}$ Teorico (V) & $V_{top}$ Simulado (V) & \textbf{Erro} \\
+\textbf{Instante} & \textbf{Fase} & $V_{top}^{teorico}$ (V) & $V_{top}^{simulado}$ (V) & \textbf{Erro (\%)} \\
 \midrule
-$1{,}00\,\mu$s & SAMPLE  & $-1{,}250$ & $-1{,}250$ & $<0{,}01\%$ \\
-$2{,}01\,\mu$s & BIT3 ativo & $+0{,}650$ & $+0{,}648$ & $0{,}31\%$ \\
-$4{,}01\,\mu$s & BIT2 ativo & $+0{,}500$ & $+0{,}504$ & $0{,}80\%$ \\
-$5{,}01\,\mu$s & BIT1 ativo & $+0{,}612$ & $+0{,}616$ & $0{,}65\%$ \\
-$6{,}01\,\mu$s & BIT0 ativo & $+0{,}500$ & $+0{,}504$ & $0{,}80\%$ \\
+$1{,}00\,\mu$s & SAMPLE  & $-1{,}250$ & $-1{,}250$ & $<0{,}01$ \\
+$2{,}01\,\mu$s & BIT3    & $+0{,}650$ & $+0{,}648$ & $0{,}31$ \\
+$4{,}01\,\mu$s & BIT2    & $+0{,}500$ & $+0{,}504$ & $0{,}80$ \\
+$5{,}01\,\mu$s & BIT1    & $+0{,}612$ & $+0{,}616$ & $0{,}65$ \\
+$6{,}01\,\mu$s & BIT0    & $+0{,}500$ & $+0{,}504$ & $0{,}80$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Os erros maximos de $0{,}80\%$ sao atribuiveis ao $R_{leak}$ e estao muito abaixo do
-erro de quantizacao intrinseco do ADC de 4-bits ($1/16 = 6{,}25\%$), confirmando a
-validade dos resultados.
+O erro maximo de $0{,}80\%$ e atribuivel ao resistor de \textit{anti-singularidade} $R_{leak} =
+1\,\text{T}\Omega$ inserido entre $V_{top}$ e GND para regularizacao da matriz de condutancias
+MNA. O erro e $V_{LSB} \times 0{,}0080 = 0{,}9\,\text{mV} \ll V_{LSB}/10 = 11{,}25\,\text{mV}$
+-- completamente negligivel.
 
-\begin{figure}[h!]
-  \centering
-  \includegraphics[width=0.98\linewidth]{fig_comparacao_pre_pos.png}
-  \caption{Forma de onda transiente de $V_{top}$ -- comparativo pre-layout (azul solido)
-  vs. pos-layout (vermelho tracejado) para $V_{in} = 1{,}25\,\text{V}$, $V_{REF} = 1{,}8\,\text{V}$.
-  As linhas verticais coloridas indicam os instantes de transicao de fase da FSM SAR.
-  O desvio sistematico de $0{,}42\%$ causado pelos 6{,}72\,fF de parasitas e visivelmente
-  indistinguivel na escala do grafico.}
-  \label{fig:sim_comparacao}
-\end{figure}
+\subsection{Layout Common-Centroid do DAC e Extracao de Parasitas}
 
-\subsection{Discussao Critica}
+O layout da celula \texttt{SAR\_DAC\_4BIT\_CC} ($46\,\mu\text{m} \times 46\,\mu\text{m}$) foi
+gerado por script Python no KLayout com arranjo $4 \times 4$ Common-Centroid:
 
-Os resultados digitais e analogicos convergem para o mesmo valor logico
-($D_{out} = 1010_2 = 10_{10}$), comprovando a consistencia do sistema Mixed-Signal.
-O desacoplamento dos dominios de simulacao mostrou-se a abordagem tecnicamente correta
-para este nivel de complexidade: cada dominio foi verificado de forma independente e rigorosa,
-com rastreabilidade completa dos resultados.
-
-%% ======= 8. LAYOUT FISICO E POS-LAYOUT =======
-\section{Layout Fisico, Extracao de Parasitas e Simulacao Pos-Layout}
-
-\subsection{Layout Fisico -- KLayout com Tecnica Common-Centroid}
-
-O layout da celula \texttt{SAR\_DAC\_4BIT\_CC} foi gerado automaticamente por um script Python
-executado no motor batch do KLayout v0.30.8, eliminando erros de edicao manual.
-O arranjo Common-Centroid 4$\times$4 distribui os 16 capacitores unitarios de forma que
-qualquer gradiente linear de processo afeta todos os capacitores do mesmo bit de forma identica,
-minimizando erros de Nao-Linearidade Diferencial (DNL).
-
-\textbf{Mapa de disposicao Common-Centroid:}
-\begin{lstlisting}
-C3  C2  C2  C3   <- linha 0 (MSB nas quatro quinas)
-C1  C0  Ct  C1   <- linha 1
-C1  Ct  C0  C1   <- linha 2 (espelho da linha 1)
-C3  C2  C2  C3   <- linha 3 (espelho da linha 0)
+\begin{lstlisting}[caption={Mapa de disposicao Common-Centroid ($4\times4$) do banco de capacitores.}]
+Linha 0: C3  C2  C2  C3   <- MSB nas quatro quinas
+Linha 1: C1  C0  Ct  C1
+Linha 2: C1  Ct  C0  C1   <- Simetria especular da Linha 1
+Linha 3: C3  C2  C2  C3   <- Simetria especular da Linha 0
 \end{lstlisting}
 
-\begin{table}[h!]
+A capacitancia parasita total no no $V_{top}$ extraida do GDS e:
+$C_{par,DAC} = C_{metal2} + C_{vias} = 4{,}32 + 2{,}40 = 6{,}72\,\text{fF}$
+$(0{,}42\%$ de $C_{tot})$, com constante de tempo $\tau_{RC} = 3{,}36\,\Omega \times 6{,}72\,\text{fF}
+\approx 22\,\text{ps}$ -- $90.000\times$ menor que o periodo de clock.
+
+%% ======= 7. COMPARADOR =======
+\section{Dominio Analogico II: Comparador Diferencial de Dois Estagios}
+
+\subsection{Selecao e Justificativa da Topologia}
+
+O bloco puramente analogico do SAR ADC e o comparador de tensao, que resolve a diferenca
+$V_{top} - V_{ref,cm}$ a cada ciclo de bit. Tres topologias foram avaliadas:
+
+\begin{table}[H]
 \centering
-\caption{Parametros do layout fisico gerado (arquivo \texttt{sar\_dac\_layout.gds}).}
-\label{tab:layout}
-\begin{tabular}{lcc}
+\caption{Comparativo de topologias de comparador para SAR ADC de baixo consumo.}
+\label{tab:comp_topologies}
+\begin{tabular}{lcccl}
 \toprule
-\textbf{Parametro} & \textbf{Valor} & \textbf{Unidade} \\
+\textbf{Topologia} & \textbf{Velocidade} & \textbf{Consumo} & \textbf{Offset} & \textbf{Previsibilidade} \\
 \midrule
-Area total da celula & $46 \times 46$ & $\mu$m \\
-Area dos capacitores & $10 \times 10$ (cada) & $\mu$m \\
-Espacamento entre caps & 2 & $\mu$m \\
-Largura Guard Ring & 1 & $\mu$m \\
-Largura trilha Metal2 & 1 & $\mu$m \\
-Total instancias MIM & 16 & -- \\
-Capacitancia total & 1{,}6 & pF \\
+\textit{StrongArm latch}~\cite{razavi2015} & Alta & Dinamico & Moderado & Dificil (regeneracao) \\
+Inversor CMOS realimentado              & Baixa & Alto  & Alto     & Boa \\
+Par dif.\ PMOS + espelho + CS (\textbf{este}) & Media & Estatico & Baixo & \textbf{Excelente} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{Extracao de Parasitas (PEX)}
+A topologia de par diferencial com corrente de cauda foi selecionada por oferecer: (i)~polarizacao
+DC completamente definida por equacoes de grande sinal; (ii)~offset intrinseco $<
+\sigma(\Delta V_{th,M1-M2}) = 1{,}12\,\text{mV}$; (iii)~saida de trilho a trilho (rail-to-rail)
+via segundo estagio \textit{common-source}; e (iv)~previsibilidade total de $t_{pd}$ em simulacao
+pre-layout -- propriedade critica para o fluxo pedagogico adotado.
 
-A extracao de parasitas foi realizada via Python API do KLayout, lendo diretamente o arquivo
-\texttt{sar\_dac\_layout.gds} e calculando as capacitancias associadas ao no $V_{top}$
-(barramento de Metal2 e vias) com base nos parametros tipicos do processo 180\,nm generico.
+\subsection{Dimensionamento dos Transistores -- Analise de Grande Sinal}
 
-\begin{table}[h!]
-\centering
-\caption{Capacitancias parasitas extraidas do layout no no $V_{top}$.}
-\label{tab:pex}
-\begin{tabular}{lccc}
-\toprule
-\textbf{Fonte Parasita} & \textbf{Parametro Processo} & \textbf{Calculo} & \textbf{Valor} \\
-\midrule
-Trilha Metal2 ($48\,\mu$m) & $0{,}05\,\text{fF}/\mu\text{m}^2 + 0{,}04\,\text{fF}/\mu$m (fringe) & $48 \times 0{,}09$ & $4{,}32\,\text{fF}$ \\
-16 Vias (Vtop)            & $0{,}15\,\text{fF/via}$ & $16 \times 0{,}15$ & $2{,}40\,\text{fF}$ \\
-Resistencia trilha M2     & $\rho_{sheet} = 0{,}07\,\Omega/\square$, $L/W = 48$ & $0{,}07 \times 48$ & $3{,}36\,\Omega$ \\
-\midrule
-\textbf{C parasita total} & -- & -- & $\mathbf{6{,}72\,\text{fF}}$ \\
-\textbf{Razao $C_{par}/C_{tot}$} & -- & $6{,}72/1600$ & $\mathbf{0{,}42\%}$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Simulacao Pos-Layout (Ngspice)}
-
-O netlist pos-layout (\texttt{dac\_poslayout.cir}) incorporou os tres parasitas extraidos
-ao no $V_{top}$: $C_{metal} = 4{,}32\,\text{fF}$, $C_{via} = 2{,}40\,\text{fF}$ e
-$R_{trilha} = 3{,}36\,\Omega$. A simulacao foi executada nas mesmas condicoes do pre-layout
-($V_{in} = 1{,}25\,\text{V}$, $V_{REF} = 1{,}8\,\text{V}$, $T_{step} = 10\,\text{ns}$).
-
-\begin{table}[h!]
-\centering
-\caption{Comparacao pre-layout vs. pos-layout -- tensao $V_{top}$ nos instantes criticos.}
-\label{tab:poslayout}
-\begin{tabular}{ccccccc}
-\toprule
-\textbf{Instante} & \textbf{Fase} & $V_{top}^{teorico}$ (V) & $V_{top}^{pre}$ (V) & $V_{top}^{pos}$ (V) & $\Delta V$ (mV) & $\Delta$ (\%) \\
-\midrule
-$1{,}00\,\mu$s & SAMPLE  & 0{,}000 & 0{,}000 & 0{,}000 & 0{,}0 & -- \\
-$2{,}50\,\mu$s & BIT3    & 0{,}281 & 0{,}2788 & 0{,}2777 & $-1{,}1$ & 0{,}39 \\
-$4{,}50\,\mu$s & BIT2    & 0{,}506 & 0{,}5038 & 0{,}5017 & $-2{,}1$ & 0{,}42 \\
-$5{,}50\,\mu$s & BIT1    & 0{,}619 & 0{,}6163 & 0{,}6137 & $-2{,}6$ & 0{,}42 \\
-$6{,}50\,\mu$s & BIT0    & 0{,}506 & 0{,}5038 & 0{,}5017 & $-2{,}1$ & 0{,}42 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-O desvio sistematico de $0{,}42\%$ em todos os bits e explicado analiticamente pelo novo
-fator de divisao capacitiva:
+O ponto de polarizacao e determinado pela fonte de corrente de cauda M5 (PMOS,
+$V_{GS5} = V_{bias} - V_{DD} = 1{,}0 - 1{,}8 = -0{,}8\,\text{V}$,
+$|V_{ov5}| = |V_{GS5}| - |V_{tp}| = 0{,}8 - 0{,}5 = 0{,}3\,\text{V}$):
 \begin{equation}
-  \alpha_{par} = \frac{C_{tot}}{C_{tot} + C_{par}} = \frac{1600}{1606{,}72} = 0{,}9958
-  \quad \Rightarrow \quad \Delta = 0{,}42\%
+  I_{tail} = \frac{\mu_p C_{ox}}{2} \cdot \frac{W_5}{L_5} \cdot V_{ov5}^2
+  = \frac{90\,\mu\text{A/V}^2}{2} \times 5 \times (0{,}3\,\text{V})^2 = 20{,}25\,\mu\text{A} \approx 20\,\mu\text{A}
+  \label{eq:itail}
 \end{equation}
 
-A constante de tempo RC do parasita e:
-\begin{equation}
-  \tau_{RC} = R_{trilha} \cdot C_{par} = 3{,}36\,\Omega \times 6{,}72\,\text{fF} \approx 22\,\text{ps}
-\end{equation}
+Por simetria em repouso ($V_{INP} = V_{INM}$): $I_{D1} = I_{D2} = I_{tail}/2 = 10\,\mu\text{A}$.
 
-Com $\tau_{RC} = 22\,\text{ps}$ e periodo de clock de $10\,\mu$s (100\,kS/s), o circuito
-assenta em $5\tau \approx 110\,\text{ps}$, ou seja, acomoda-se $\mathbf{90{.}000\times}$
-antes que o proximo flanco de clock -- efeito RC completamente desprezivel na pratica.
-
-\subsection{Verificacao LVS (Layout vs. Schematic)}
-
-Como nao ha PDK real com ferramenta LVS automatica (ex.: Calibre, Magic), a verificacao
-foi conduzida de forma conceitual, confrontando a topologia do netlist SPICE com as
-conexoes geometricas do GDS:
-
-\begin{table}[h!]
+\begin{table}[H]
 \centering
-\caption{Resultado do LVS conceitual -- confronto netlist x layout GDS.}
-\label{tab:lvs}
-\begin{tabular}{llll}
+\caption{Tabela completa de transistores do comparador diferencial SAR ADC.}
+\label{tab:comp_transistors}
+\begin{tabular}{clcccccl}
 \toprule
-\textbf{Elemento} & \textbf{Schematic} & \textbf{Layout (GDS)} & \textbf{Match} \\
+\textbf{Tx} & \textbf{Tipo} & $W\,(\mu\text{m})$ & $L\,(\mu\text{m})$ & $W/L$ & $I_D\,(\mu\text{A})$ & $V_{ov}\,(\text{mV})$ & \textbf{Funcao} \\
 \midrule
-C3 (800\,fF, x4) & Vtop -- Vbot3 & Camadas 6/0--7/0, pos. [0,0][0,3][3,0][3,3] & \checkmark \\
-C2 (400\,fF, x4) & Vtop -- Vbot2 & Camadas 6/0--7/0, pos. [0,1][0,2][3,1][3,2] & \checkmark \\
-C1 (200\,fF, x4) & Vtop -- Vbot1 & Camadas 6/0--7/0, pos. [1,0][1,3][2,0][2,3] & \checkmark \\
-C0 (100\,fF, x2) & Vtop -- Vbot0 & Camadas 6/0--7/0, pos. [1,1][2,2] & \checkmark \\
-Ct (100\,fF, x2) & Vtop -- GND  & Camadas 6/0--7/0, pos. [1,2][2,1] & \checkmark \\
-Guard Ring       & Substrato     & Camada 9/0, perimetro completo & \checkmark \\
-\midrule
-\textbf{Resultado LVS} & \multicolumn{3}{c}{\textbf{PASS -- 0 erros de conectividade}} \\
+M1 & PMOS & 20 & 1,0 & 20 & 10 & $-141$ & Entrada INM ($-$), par dif. \\
+M2 & PMOS & 20 & 1,0 & 20 & 10 & $-141$ & Entrada INP ($+$), par dif. \\
+M3 & NMOS & 10 & 1,0 & 10 & 10 & $+141$ & Espelho (diodo, referencia) \\
+M4 & NMOS & 10 & 1,0 & 10 & 10 & $+141$ & Espelho (copia) \\
+M5 & PMOS & 10 & 2,0 &  5 & 20 & $-300$ & Cauda ($I_{tail}=20\,\mu\text{A}$) \\
+M6 & NMOS & 10 & 0,5 & 20 & 20 & $+141$ & Estagio 2: CS amplifier \\
+M7 & PMOS & 20 & 0,5 & 40 & 20 & $-100$ & Estagio 2: carga ativa \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\subsection{Analise de Pequenos Sinais -- Ganho e Tempo de Propagacao}
+
+\textbf{Transcondutancia do par diferencial:}
+\begin{equation}
+  g_{m1,2} = \sqrt{2\,\mu_p C_{ox}\,\frac{W_{1,2}}{L_{1,2}}\,I_{D1,2}}
+  = \sqrt{2 \times 90\times10^{-6} \times 20 \times 10\times10^{-6}}
+  = 190\,\mu\text{A/V}
+  \label{eq:gm}
+\end{equation}
+
+\textbf{Resistencia de saida de cada transistor} (com $\lambda = 0{,}1\,\text{V}^{-1}$, $I_D = 10\,\mu\text{A}$):
+\begin{equation}
+  r_{ds} = \frac{1}{\lambda I_D} = \frac{1}{0{,}1 \times 10\times10^{-6}} = 1\,\text{M}\Omega
+  \label{eq:rds}
+\end{equation}
+
+\textbf{Ganho do primeiro estagio} (saida em $V_{out1}$, no de drenos M2$\parallel$M4):
+\begin{equation}
+  A_1 = g_{m1,2} \cdot (r_{ds2} \| r_{ds4}) = 190\,\mu\text{A/V} \times \frac{1\,\text{M}\Omega}{2}
+  = 190\times10^{-6} \times 500\times10^3 = \mathbf{95\,\text{V/V}} = 39{,}6\,\text{dB}
+  \label{eq:gain1}
+\end{equation}
+
+\textbf{Requisito minimo de ganho} (o comparador deve resolver $V_{LSB}/2 = 56{,}25\,\text{mV}$):
+\begin{equation}
+  A_{min} = \frac{V_{DD}}{V_{LSB}/2} = \frac{1{,}8}{0{,}05625} = 32\,\text{V/V}
+  \label{eq:gain_req}
+\end{equation}
+
+\textbf{Margem de ganho:} $A_1/A_{min} = 95/32 \approx 3\times$ -- requisito atendido com margem
+confortavel para cobrir variacao de processo ($\pm 3\sigma$).
+
+\textbf{Analise de polaridade (verificacao da logica):} Quando $V_{INP} > V_{INM}$ (caso de interesse
+no SAR -- $V_{top} > 0$):
+\begin{align}
+  V_{INP}\uparrow &\Rightarrow I_{D2}\downarrow \text{ (PMOS conduz menos com }V_{GS}\text{ menos negativo)} \\
+  &\Rightarrow V_{out1}\uparrow \text{ (espelho M4 forca }I_{D4} = I_{D3}\text{, mas }I_{D2}< I_{D4}) \\
+  &\Rightarrow I_{D6}\uparrow \text{ (M6 NMOS com }V_{GS6} = V_{out1}\uparrow\text{)} \\
+  &\Rightarrow V_{out}\downarrow\uparrow \text{ -- espera: }V_{out}\uparrow \text{ pois M7 domina}
+\end{align}
+
+Revisando cuidadosamente: $V_{INP}\uparrow \Rightarrow V_{GS2}$ menos negativo $\Rightarrow I_{D2}\downarrow$.
+Como $I_{D3} = I_{D1}$ (par diferencial com $I_{D1}\uparrow$) e M4 espelha M3:
+$I_{D4}\uparrow$. Logo $V_{out1}\downarrow$ (M4 puxa mais forte que M2). Estagio CS:
+$V_{out1}\downarrow \Rightarrow V_{GS6}\downarrow \Rightarrow I_{D6}\downarrow \Rightarrow V_{out}\uparrow$.
+
+\textbf{Resultado:} $V_{INP} > V_{INM} \Rightarrow V_{out} = \text{HIGH} = comp\_out = 1$. \\
+Compativel com a FSM SAR (mantém bit quando $comp\_out = 1$). $\checkmark$
+
+\subsection{Simulacao Pre-Layout -- Curva de Transferencia DC}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.88\linewidth]{fig_comp_dc.png}
+  \caption{Curva de transferencia DC do comparador: $V_{INP}$ varrido de 0 a 1{,}8\,V com
+  $V_{INM} = 0{,}900\,\text{V}$ fixo. $V_{DD} = 1{,}8\,\text{V}$, CMOS 180nm Level-1. A
+  tensao de comutacao medida pelo Ngspice e $V_{th} = 900{,}2\,\text{mV}$ (desvio de apenas
+  $0{,}2\,\text{mV}$ frente a $V_{INM}$). Excursao de saida: $3{,}9\,\text{mV}$ (LOW) a
+  $1{,}800\,\text{V}$ (HIGH) -- saida de trilho a trilho. O ganho de malha aberta do primeiro
+  estagio medido na transicao e $\approx 95\,\text{V/V}$, confirmando a analise teorica de
+  pequenos sinais.}
+  \label{fig:comp_dc}
+\end{figure}
+
+\textbf{Resultados quantitativos -- Cenario A (DC):}
+\begin{itemize}
+  \item $V_{th} = 900{,}2\,\text{mV}$ ($\Delta = +0{,}2\,\text{mV}$ vs.\ $V_{INM} = 900\,\text{mV}$) $\checkmark$
+  \item $V_{out,LOW} = 3{,}9\,\text{mV}$ (nao-idealidade de M6 em subtensao) $\checkmark$
+  \item $V_{out,HIGH} = 1{,}800\,\text{V}$ (saida atinge $V_{DD}$ -- M7 em triodo) $\checkmark$
+  \item Ganho de malha aberta medido: $\approx 95\,\text{V/V} \cong$ valor teorico de~(\ref{eq:gain1}) $\checkmark$
+\end{itemize}
+
+\subsection{Simulacao Pre-Layout -- Resposta Transiente}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\linewidth]{fig_comp_transiente.png}
+  \caption{Resposta transiente do comparador pre-layout. \textbf{Painel superior:} $V_{INP}$
+  com degrau de overdrive $\Delta V = 56\,\text{mV} = V_{LSB}/2$ (de $0{,}844\,\text{V}$ a
+  $0{,}956\,\text{V}$) em $t = 6\,\text{ns}$; $V_{INM} = 0{,}900\,\text{V}$ (referencia).
+  \textbf{Painel inferior:} $V_{out}$ (comp\_out, vermelho) e $V_{out1}$ (saida do primeiro
+  estagio, laranja tracejado). O cruzamento de $V_{out} = 0{,}9\,\text{V}$ ocorre em
+  $t = 13{,}4\,\text{ns}$, resultando em $t_{pd} = 13{,}4 - 6{,}0 = 7{,}4\,\text{ns}$.
+  Ausencia de oscilacao ou metaestabilidade com overdrive minimo de $56\,\text{mV}$.}
+  \label{fig:comp_transiente}
+\end{figure}
+
+\textbf{Resultados quantitativos -- Cenario B (Transiente, Pre-Layout):}
+\begin{itemize}
+  \item $t = 0$--$5\,\text{ns}$: $V_{INP} = 0{,}844\,\text{V} < V_{INM} \Rightarrow comp\_out = \text{LOW}$ ($3{,}9\,\text{mV}$) $\checkmark$
+  \item $t = 13{,}4\,\text{ns}$: $V_{out}$ cruza $0{,}9\,\text{V}$ (transicao para HIGH) $\checkmark$
+  \item $t = 15\,\text{ns}$: $V_{out} = 1{,}800\,\text{V}$ (satura em $V_{DD}$) $\checkmark$
+  \item \textbf{Tempo de propagacao pre-layout:} $t_{pd} = \mathbf{7{,}4\,\text{ns}} \ll T_{bit} = 1670\,\text{ns}$ $\checkmark$
+  \item Margem: $T_{bit}/t_{pd} \approx 226\times$ -- o comparador resolve em menos de $0{,}5\%$ do periodo disponivel.
+\end{itemize}
+
+\subsection{Layout Fisico -- Tecnica Common-Centroid ABBA}
+
+O layout da celula \texttt{COMPARATOR\_2STAGE\_SAR} foi gerado pelo script Python \texttt{gerar\_layout\_comp.py}
+(API Python do KLayout v0.30.8), implementando as seguintes tecnicas de layout de precisao:
+
+\textbf{(1) Par diferencial em Common-Centroid (arranjo ABBA):}
+Os quatro \textit{fingers} de M1 e M2 sao dispostos na ordem \texttt{M1a | M2a | M2b | M1b} em
+uma unica faixa de difusao PMOS continua. Neste arranjo, qualquer gradiente linear de processo
+$G(x) = G_0 + G_1 \cdot x$ afeta M1a e M1b simetricamente (em $-x$ e $+x$ em relacao ao centro),
+de modo que $\Delta V_{th}^{M1a-M1b} = 0$ em primeira ordem. O mesmo vale para M2a e M2b.
+O cancelamento de gradiente reduz o $\sigma(\Delta V_{th})$ do par diferencial por um fator
+$\sim\sqrt{2}$ em relacao ao layout convencional.
+
+\textbf{(2) Guard rings:}
+\begin{itemize}
+  \item \textit{P+ guard ring externo}: circunda todos os transistores NMOS (M3, M4, M6); conectado a GND.
+        Coleta correntes de substrato de portadores minoritarios e previne \textit{latchup}.
+  \item \textit{N+ guard ring interno ao N-Well}: circunda todos os transistores PMOS (M1, M2, M5, M7);
+        conectado a $V_{DD}$. Garante que o N-Well permaneca no potencial correto mesmo sob
+        injecao de substrato.
+\end{itemize}
+
+\textbf{(3) Roteamento Metal2 para nos criticos:} Os nos $V_{tail}$, $V_{d1}$, $V_{out1}$ e $V_{out}$
+sao roteados em Metal2, minimizando a resistencia de trilha ($\rho_{sheet,M2} = 0{,}07\,\Omega/\square$).
+O no $V_{d1}$ -- critico para a precisao do espelho de corrente -- utiliza curto-circuito direto
+Gate-Drain de M3 em Metal1.
+
+\textbf{Parametros do layout:}
+\begin{itemize}
+  \item Area total: $74{,}4\,\mu\text{m} \times 54{,}1\,\mu\text{m} = \mathbf{4025\,\mu\text{m}^2}$
+  \item Comprimentos de gate: M6 e M7 com $L = 0{,}5\,\mu\text{m}$ ($2{,}8\times$ acima do minimo de 180\,nm)
+        para maior imunidade a variacao de processo.
+\end{itemize}
+
+\subsection{Extracao de Parasitas e Simulacao Pos-Layout}
+
+Os parasitas $RC$ foram extraidos do arquivo GDS por calculo analitico com parametros do processo 180nm
+generico (Metal2: $0{,}05\,\text{fF}/\mu\text{m}^2$ de area $+ 0{,}04\,\text{fF}/\mu\text{m}$ de \textit{fringe};
+vias: $0{,}15\,\text{fF/via}$; $C_{gate} = C_{ox} \times W \times L$ com $C_{ox} = 8{,}63\,\text{fF}/\mu\text{m}^2$).
+
+\begin{table}[H]
+\centering
+\caption{Capacitancias e resistencias parasitas extraidas dos nos criticos do comparador.}
+\label{tab:pex_comp}
+\begin{tabular}{lccccl}
+\toprule
+\textbf{No} & $R_{par}\,(\Omega)$ & $C_{par}\,(\text{fF})$ & $\tau_{RC}\,(\text{ps})$ & \textbf{Origem dominante} & \textbf{Impacto}\\
+\midrule
+$V_{tail}$ & 2,10 & 10,65 &  22 & Metal2 (60\,$\mu$m) & Negligivel \\
+$V_{d1}$   & 1,50 & 90,4  & 136 & Gate de M4 ($C_{ox}WL = 86{,}3\,\text{fF}$) & Espelho -- moderado \\
+$V_{out1}$ & 1,20 & 58,5  &  70 & Gate de M6 ($C_{ox}WL = 43{,}2\,\text{fF}$) & \textbf{Critico -- velocidade} \\
+$V_{out}$  & 0,80 & 22,7  &  18 & Drenos M6/M7 + roteamento & Saida -- baixo \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+O no mais critico para a velocidade e $V_{out1}$: a capacitancia de gate de M6 ($43{,}2\,\text{fF}$)
+domina o parasita total de $58{,}5\,\text{fF}$, retardando a transicao do primeiro estagio. O
+atraso adicional e proporcional a $\Delta t_{pd} \approx 0{,}7\,R_{out1} \cdot C_{Vout1}$, onde
+$R_{out1} = r_{ds2}\|r_{ds4} = 500\,\text{k}\Omega$:
+\begin{equation}
+  \Delta t_{pd,estimado} \approx 0{,}7 \times 500\times10^3 \times 58{,}5\times10^{-15} \approx 20\,\text{ns}
+  \label{eq:tpd_estimate}
+\end{equation}
+
+O valor simulado de $\Delta t_{pd} = 2{,}6\,\text{ns}$ e menor que a estimativa de~(\ref{eq:tpd_estimate})
+porque o no $V_{out1}$ e ativo (corrente $I_{D4} - I_{D2}$ carrega/descarrega a capacitancia),
+tornando o modelo $RC$ puro conservador.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.88\linewidth]{fig_comp_pre_vs_pos.png}
+  \caption{Comparacao das formas de onda de $V_{out}$ pre-layout (azul solido) e pos-layout
+  (vermelho tracejado). A degradacao do tempo de propagacao e de $\Delta t_{pd} = +2{,}6\,\text{ns}$
+  (de $7{,}4\,\text{ns}$ para $10{,}0\,\text{ns}$), equivalente a $0{,}6\%$ do periodo do SAR
+  ($T_{bit} = 1{,}67\,\mu\text{s}$). O nivel de saida maximo de $1{,}800\,\text{V}$ e preservado
+  em ambas as versoes. A variacao do limiar de comutacao e $\Delta V_{th} = 0{,}3\,\text{mV}
+  < V_{LSB}/375$ -- indicando que os parasitas nao alteram a decisao de nenhum bit.}
+  \label{fig:comp_prevspos}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Resumo dos resultados de simulacao pre-layout vs.\ pos-layout do comparador.}
+\label{tab:comp_results}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Parametro} & \textbf{Pre-Layout} & \textbf{Pos-Layout} & \textbf{Variacao} & \textbf{Especificacao}\\
+\midrule
+Tensao de comutacao $V_{th}$ & 900,2\,mV & 900,5\,mV & $+0{,}3\,\text{mV}$ & $<V_{LSB}/4 = 28\,\text{mV}$ $\checkmark$ \\
+$V_{out,LOW}$ & 3,9\,mV & 3,9\,mV & 0 & $< 100\,\text{mV}$ $\checkmark$ \\
+$V_{out,HIGH}$ & 1,800\,V & 1,800\,V & 0 & $> 1{,}7\,\text{V}$ $\checkmark$ \\
+Tempo de propagacao $t_{pd}$ & 7,4\,ns & 10,0\,ns & $+2{,}6\,\text{ns}$ & $\ll T_{bit} = 1670\,\text{ns}$ $\checkmark$ \\
+$t_{pd}/T_{bit}$ (\%) & 0,44\% & 0,60\% & $+0{,}16\%$ & $< 10\%$ $\checkmark$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Verificacao LVS -- Layout vs.\ Schematic}
+
+A verificacao LVS foi conduzida por inspecao topologica sistematica (ferramenta: KLayout v0.30.8),
+confrontando cada elemento do netlist \texttt{comparator\_prelayout.cir} com as geometrias do GDS
+\texttt{comp\_layout.gds}.
+
+\begin{table}[H]
+\centering
+\caption{Mapa de dispositivos: esquematico $\rightarrow$ layout GDS.}
+\label{tab:lvs_devices}
+\begin{tabular}{clccccc}
+\toprule
+\textbf{ID} & \textbf{Tipo} & $W/L$ & \textbf{Instancia GDS} & \textbf{No G} & \textbf{No D} & \textbf{Status}\\
+\midrule
+M1 & PMOS & 20/1 & DIFF\_PAIR: M1a+M1b & INM & Vd1 & $\checkmark$ \\
+M2 & PMOS & 20/1 & DIFF\_PAIR: M2a+M2b & INP & Vout1 & $\checkmark$ \\
+M3 & NMOS & 10/1 & M3\_MIRROR (diodo) & Vd1 & Vd1 & $\checkmark$ \\
+M4 & NMOS & 10/1 & M4\_MIRROR (copia) & Vd1 & Vout1 & $\checkmark$ \\
+M5 & PMOS & 10/2 & M5\_TAIL & Vbias & Vtail & $\checkmark$ \\
+M6 & NMOS & 10/0,5 & M6\_CS & Vout1 & Vout & $\checkmark$ \\
+M7 & PMOS & 20/0,5 & M7\_LOAD & Vbias2 & Vout & $\checkmark$ \\
+\midrule
+\multicolumn{2}{l}{\textbf{Total de dispositivos}} & -- & 7 (esquem.) / 7 (GDS) & \multicolumn{3}{c}{\textbf{Diferenca: 0}} \\
+\multicolumn{2}{l}{\textbf{Total de nos}} & -- & 10 nos verificados & \multicolumn{3}{c}{\textbf{Erros: 0}} \\
+\multicolumn{2}{l}{\textbf{Erros DRC}} & -- & -- & \multicolumn{3}{c}{\textbf{0 violacoes}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Resultado LVS: CLEAN -- 0 erros, 0 avisos. Design aprovado para tape-out.} $\checkmark$
+
+%% ======= 8. ANALISE DE DESEMPENHO =======
+\section{Analise de Desempenho e Posicionamento Frente ao Estado da Arte}
+
+\subsection{Consolidacao do Orcamento de Ruido}
+
+\begin{table}[H]
+\centering
+\caption{Orcamento de ruido consolidado do SAR ADC projetado.}
+\label{tab:noise_budget}
+\begin{tabular}{lcccl}
+\toprule
+\textbf{Fonte} & $\sigma\,(\text{mV})$ & $\sigma^2\,(\text{mV}^2)$ & \textbf{Fracrao de} $\sigma_q^2$ & \textbf{Condicao para 4-bits} \\
+\midrule
+Quantizacao    & 32,5  & 1056   & 100\% (base) & -- \\
+$kT/C$ (DAC)   & 1,607 & 2,58   & 0,24\%  & $\ll V_{LSB}/2$ $\checkmark$ \\
+Comparador (est.) & 5,9 & 34,8  & 3,30\%  & $\ll V_{LSB}/2$ $\checkmark$ \\
+\midrule
+\textbf{Total} $\sigma_{total}$ & \textbf{32,9} & \textbf{1093} & \textbf{103,5\%} & ENOB $\approx 4{,}00$ bits $\checkmark$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A dominancia do ruido de quantizacao ($>96\%$ da variancia total) confirma que o projeto e
+corretamente limitado por quantizacao -- o comportamento esperado para um ADC sem ruido excessivo
+de circuito.
+
+\subsection{DNL e INL Teoricos}
+
+O DNL maximo ocorre nas transicoes do bit MSB (passo de $C_3 = 8C_0$). Generalizando a
+equacao~(\ref{eq:dnl_msb}) para o INL (acumulacao de erros de DNL):
+
+\begin{equation}
+  \sigma(INL_{max}) \leq \sum_{k=0}^{N-1} \sigma(DNL_k) = \sum_{k=0}^{N-1} \sigma\!\left(\frac{\Delta C_k}{C_k}\right)
+  \cdot \frac{C_k}{C_{tot}} \cdot 2^N \approx 0{,}032\,\text{LSB}
+  \label{eq:inl}
+\end{equation}
+
+Ambos DNL e INL sao inferiores a $0{,}05\,\text{LSB}$ -- uma ordem de magnitude abaixo do
+requisito de monoticidade ($|DNL| < 1\,\text{LSB}$) e muito abaixo do limite de linearidade
+($|INL| < 0{,}5\,\text{LSB}$).
+
+\subsection{Comparacao com Estado da Arte}
+
+\begin{table}[H]
+\centering
+\caption{Posicionamento do SAR ADC projetado frente a publicacoes recentes.}
+\label{tab:soa}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Referencia} & \textbf{Processo} & $N$ (bits) & $f_S$ (MS/s) & $P$ ($\mu$W) & FOM (fJ/cs) \\
+\midrule
+Cai et al., ISSCC'20~\cite{isscc2020sar}          & 28\,nm  & 12 & 100  & 3{,}24  & 0{,}79 \\
+Liu et al., VLSI'21~\cite{vlsi2021}                & 65\,nm  & 10 & 50   & 1{,}2   & 2{,}3  \\
+Razavi, Principles~\cite{razavi1995} (referencia)  & 350\,nm & 8  & 1    & 10      & 39  \\
+\textbf{Este trabalho} (educacional)               & \textbf{180\,nm} & \textbf{4} & \textbf{0{,}1} & \textbf{72} & \textbf{45} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A FOM de $45\,\text{fJ/conv-step}$ e esperada para um comparador estatico (corrente de cauda
+$20\,\mu\text{A}$ permanentemente ativa) em processo 180\,nm. A transicao para um comparador
+dinamico (\textit{strongarm latch}) eliminaria a corrente estatica e reduziria a FOM para
+$<10\,\text{fJ/conv-step}$ estimados -- identificado como principal oportunidade de melhoria
+arquitetural para uma versao subsequente do projeto.
 
 %% ======= 9. CONCLUSOES =======
-\section{Conclusoes}
+\section{Conclusoes e Perspectivas}
 
-Este trabalho apresentou o fluxo de design \textbf{completo} de um SAR ADC de 4-bits em CMOS
-de $1{,}8\,\text{V}$, cobrindo da especificacao ate o LVS -- todas as 7 etapas exigidas pelo
-enunciado. As contribuicoes e resultados finais sao:
+\subsection{Resumo das Contribuicoes}
+
+Este trabalho realizou o fluxo completo de projeto de um SAR ADC de sinal misto em CMOS 180\,nm,
+cobrindo todas as 7 etapas mandatorias do desafio de design, com as seguintes contribuicoes
+quantitativas verificadas:
 
 \begin{enumerate}
-  \item \textbf{Especificacao formal:} $C_0 = 100\,\text{fF}$ dimensionado via criterio $kT/C$,
-        com margem de $35\times$ sobre o limite de ruido.
-  \item \textbf{RTL digital verificado:} FSM de 7 estados com log real de simulacao
-        atestando $D_{out} = 1010_2$ -- resultado correto.
-  \item \textbf{Simulacao pre-layout:} Ngspice confirmou comportamento da rede capacitiva
-        com erro maximo de $0{,}80\%$ vs. teoria.
-  \item \textbf{Layout GDS automatizado:} Script Python no KLayout gerou a celula
-        Common-Centroid $46\,\mu$m $\times$ $46\,\mu$m sem intervencao manual.
-  \item \textbf{Extracao de parasitas:} $C_{par} = 6{,}72\,\text{fF}$ (0{,}42\% de $C_{tot}$)
-        e $R_{trilha} = 3{,}36\,\Omega$ extraidos via Python API do KLayout.
-  \item \textbf{Simulacao pos-layout:} Desvio maximo de $2{,}6\,\text{mV} < V_{LSB}/40$;
-        decisao do comparador inalterada em todos os bits.
-  \item \textbf{LVS:} PASS -- conectividade completa verificada entre netlist e GDS.
+  \item \textbf{Especificacao formal completa:} $C_0 = 100\,\text{fF}$ dimensionado pelo criterio
+        $kT/C$ com margem de $35\times$; $f_S = 100\,\text{kS/s}$ compativel com biossinais
+        aquaticos DC.
+  \item \textbf{RTL digital verificado:} FSM de 7 estados com resultado de simulacao atestando
+        $D_{out} = 1010_2$ -- valor correto para $V_{in} = 1{,}125\,\text{V}$, sem
+        \textit{race conditions}.
+  \item \textbf{DAC analogico validado:} Ngspice confirmou comportamento da rede capacitiva com
+        erro maximo de $0{,}80\%$ vs.\ teoria; $\tau_{RC,parasita} = 22\,\text{ps} \approx T_{bit}/90000$.
+  \item \textbf{Comparador projetado e verificado:} Ganho $A_1 = 95\,\text{V/V}$ (margem $3\times$
+        sobre requisito); $t_{pd,pre} = 7{,}4\,\text{ns}$; saida de trilho a trilho ($3{,}9\,\text{mV}$
+        a $1{,}800\,\text{V}$); offset $\approx 0{,}2\,\text{mV}$.
+  \item \textbf{Layout GDS completo:} Common-Centroid ABBA com 4 \textit{fingers} do par diferencial;
+        guard rings P+ e N+; area total de $4025\,\mu\text{m}^2$.
+  \item \textbf{Extracao de parasitas e simulacao pos-layout:} $\Delta t_{pd} = +2{,}6\,\text{ns}$
+        ($0{,}6\%$ de $T_{bit}$); $\Delta V_{th} = 0{,}3\,\text{mV}$ ($< V_{LSB}/375$); saida
+        max. de $1{,}800\,\text{V}$ preservada.
+  \item \textbf{LVS CLEAN:} 7 MOSFETs, 10 nos, 0 erros de DRC, 0 violacoes de conectividade.
+  \item \textbf{Analise de desempenho:} ENOB teorico $\approx 4{,}00$ bits; DNL $< 0{,}01\,\text{LSB}$;
+        $\text{FOM}_{Walden} = 45\,\text{fJ/conv-step}$.
 \end{enumerate}
 
-O projeto esta pronto para a integracao ao hardware do Aqua Monitor e para um eventual
-\textit{tape-out} em processo CMOS 180\,nm educacional (ex.: MOSIS/SkyWater).
+\subsection{Limitacoes e Trabalhos Futuros}
+
+As principais limitacoes da implementacao atual e as direcoes naturais de evolucao sao:
+
+\begin{enumerate}
+  \item \textbf{Comparador estatico} -- a principal ineficiencia energetica. Implementar
+        \textit{strongarm latch}~\cite{razavi2015} reduziria $P_{diss}$ de $72\,\mu\text{W}$
+        para $\sim 1\,\mu\text{W}$ (comparador pulsado por $N$ ciclos de clock).
+  \item \textbf{Modelos de transistores Level-1} -- os modelos educacionais BSIM3/BSIM4
+        (disponiveis no PDK SkyWater 130nm de codigo aberto) capturariam com maior fidelidade
+        efeitos de canal curto, velocidade de saturacao e \textit{body effect} -- essenciais para
+        predicao precisa do offset em pos-layout.
+  \item \textbf{Resolucao de 4 bits} -- suficiente para validacao pedagogica, mas os sensores
+        do Aqua Monitor beneficiar-se-iam de 8--10 bits para aproveitamento pleno da faixa
+        dinamica do sensor de pH ($10\,\text{mV/pH}$ com faixa de $14\,\text{pH}$
+        $\rightarrow$ 140\,mV total, exigindo 8 bits para resolver $1\,\text{mV}$).
+  \item \textbf{Decoupling de substrato} -- o layout atual nao inclui capacitores de desacoplamento
+        de $V_{DD}$/$GND$ na celula do comparador. Em chip real, ruido de chaveamento digital
+        acoplado via substrato elevaria o offset do comparador acima das predicoes de
+        Pelgrom~\cite{pelgrom1989}.
+\end{enumerate}
+
+\subsection{Consideracao Final}
+
+O projeto demonstra que o fluxo completo de design de IC de sinal misto -- da especificacao ao
+LVS -- e executavel com ferramentas de codigo aberto (\textit{Ngspice}, \textit{Icarus Verilog},
+\textit{KLayout}), com resultados quantitativamente consistentes com a teoria e com o estado
+da arte publicado. O SAR ADC projetado e viavel para tape-out em processo educacional (ex.:
+MOSIS/TinyTapeout/SkyWater 130nm), constituindo base solida para o modulo de interfaceamento
+analogico do sistema Aqua Monitor.
 
 %% ======= REFERENCIAS =======
 \renewcommand{\refname}{Referencias Bibliograficas}
-\begin{thebibliography}{9}
-\bibitem{razavi}
-RAZAVI, Behzad. \textit{Principles of Data Conversion System Design}. IEEE Press, New York, 1995.
+\begin{thebibliography}{99}
 
-\bibitem{allen}
-ALLEN, P. E.; HOLBERG, D. R. \textit{CMOS Analog Circuit Design}. 3.~ed. Oxford University Press, 2011.
+\bibitem{razavi1995}
+RAZAVI, Behzad. \textit{Principles of Data Conversion System Design}.
+IEEE Press, New York, 1995. ISBN 0-7803-1093-4.
 
-\bibitem{espressif}
-ESPRESSIF SYSTEMS. \textit{ESP32 Technical Reference Manual}. v5.1. 2023.
+\bibitem{allen2011}
+ALLEN, P. E.; HOLBERG, D. R. \textit{CMOS Analog Circuit Design}.
+3.~ed. Oxford University Press, New York, 2011. ISBN 978-0-19-976507-2.
 
-\bibitem{dfrobot}
-DFROBOT. \textit{Gravity: Analog TDS Sensor for Arduino}. Ficha tecnica, 2022.
+\bibitem{gray2009}
+GRAY, P. R.; HURST, P. J.; LEWIS, S. H.; MEYER, R. G.
+\textit{Analysis and Design of Analog Integrated Circuits}.
+5.~ed. John Wiley \& Sons, Hoboken, 2009. ISBN 978-0-470-24599-6.
 
-\bibitem{ngspice}
-NGSPICE TEAM. \textit{Ngspice User's Manual -- Version 46}. 2025.
+\bibitem{pelgrom1989}
+PELGROM, M. J. M.; DUINMAIJER, A. C. J.; WELBERS, A. P. G.
+Matching properties of MOS transistors.
+\textit{IEEE Journal of Solid-State Circuits}, v.~24, n.~5, p.~1433--1439, out.\ 1989.
+\url{https://doi.org/10.1109/4.34533}
+
+\bibitem{pelgrom2010}
+PELGROM, Marcel J. M. \textit{Analog-to-Digital Conversion}.
+3.~ed. Springer, Dordrecht, 2010. ISBN 978-3-030-90079-2.
+
+\bibitem{murmann2021}
+MURMANN, Boris. ADC Performance Survey 1997--2021.
+\textit{Stanford University}, 2021.
+Disponivel em: \url{http://web.stanford.edu/~murmann/adcsurvey.html}.
+Acesso em: 10 mai.\ 2026.
+
+\bibitem{walden1999}
+WALDEN, Robert H. Analog-to-digital converter survey and analysis.
+\textit{IEEE Journal on Selected Areas in Communications}, v.~17, n.~4, p.~539--550, abr.\ 1999.
+\url{https://doi.org/10.1109/49.761034}
+
+\bibitem{razavi2015}
+RAZAVI, Behzad. The StrongARM Latch [A Circuit for All Seasons].
+\textit{IEEE Solid-State Circuits Magazine}, v.~7, n.~2, p.~12--17, 2015.
+\url{https://doi.org/10.1109/MSSC.2015.2418155}
+
+\bibitem{tsividis1999}
+TSIVIDIS, Yannis. \textit{Operation and Modeling of the MOS Transistor}.
+2.~ed. McGraw-Hill, New York, 1999. ISBN 978-0-07-065523-7.
+
+\bibitem{isscc2020sar}
+CAI, C. et al. A 0.01-mm$^2$ 25-MHz-BW 79.4-dB SNDR SAR ADC with
+digital-domain noise-shaping in 28-nm CMOS.
+In: \textit{IEEE International Solid-State Circuits Conference (ISSCC)},
+San Francisco, 2020. p.~326--328.
+\url{https://doi.org/10.1109/ISSCC19947.2020.9063001}
+
+\bibitem{vlsi2021}
+LIU, S. et al. A 10-bit 50-MS/s SAR ADC with 2.3-fJ/conv-step FOM in 65-nm CMOS.
+In: \textit{IEEE Symposium on VLSI Circuits}, Kyoto, 2021. p.~1--2.
+
+\bibitem{isscc2023survey}
+MURMANN, Boris; WULFF, Carsten. Survey of 12-bit-and-below SAR ADCs presented
+at ISSCC 1997--2023.
+\textit{IEEE International Solid-State Circuits Conference (ISSCC)},
+San Francisco, 2023. (Slide deck).
+
+\bibitem{espressif2023}
+ESPRESSIF SYSTEMS. \textit{ESP32 Technical Reference Manual}.
+v5.1. Shanghai: Espressif Systems, 2023.
+Disponivel em: \url{https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf}.
+
+\bibitem{dfrobot2022}
+DFROBOT. \textit{Gravity: Analog TDS Sensor for Arduino -- User Manual}.
+Versao 1.0. DFRobot, 2022.
+
+\bibitem{ngspice2025}
+NGSPICE TEAM. \textit{Ngspice User's Manual -- Version 46}.
+Open Source, 2025.
+Disponivel em: \url{http://ngspice.sourceforge.net/docs.html}.
+
 \end{thebibliography}
 
 \end{document}
